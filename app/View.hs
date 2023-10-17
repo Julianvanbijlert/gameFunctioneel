@@ -13,3 +13,8 @@ viewPure gstate = case infoToShow gstate of
   ShowNothing   -> blank
   ShowANumber n -> color green (text (show n))
   ShowAChar   c -> color green (text [c])
+
+stateAction :: State -> Picture --niet goed
+stateAction Running = undefined
+stateAction Paused = undefined
+stateAction GameOver = undefined
