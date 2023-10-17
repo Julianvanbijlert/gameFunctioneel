@@ -1,11 +1,10 @@
 module Model where
   -- | This module contains the data types
   --   which represent the state of the game
-  
-data Point = Pt Float Float
-data Vector = Vec Float Float
+data Point = Point (Float, Float)
+data Vector = Vector Point
 
-data Player = Undefined
+data Player = Player Point Vector
 data Enemy = Spaceship Point Vector | --can also shoot
              Rock      Point Vector
 
@@ -18,10 +17,12 @@ data Game = Game {}
 data InfoToShow = ShowNothing
                 | ShowANumber Int
                 | ShowAChar   Char
+                | ShowPlayer Player
+                | ShowRock
 
 
 nO_SECS_BETWEEN_CYCLES :: Float
-nO_SECS_BETWEEN_CYCLES = 5
+nO_SECS_BETWEEN_CYCLES = 500
 
 data GameState = GameState {
                    infoToShow  :: InfoToShow
@@ -29,5 +30,8 @@ data GameState = GameState {
                  }
 
 initialState :: GameState
-initialState = GameState ShowNothing 0
+initialState = GameState (ShowPlayer initialPlayer) 0
+
+initialPlayer :: Player
+initialPlayer = Player (Point(0, 0)) (Vector(Point(0, 1)))
 

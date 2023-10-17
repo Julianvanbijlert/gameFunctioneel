@@ -36,9 +36,9 @@ A function to step the world one iteration. It is passed the period of time (in 
 -> IO ()
 -}
 main :: IO ()
-main = playIO (InWindow "Counter" (400, 400) (0, 0)) -- Or FullScreen
-              black            -- Background color
-              fps               -- Frames per second
+main = playIO window -- Or FullScreen
+              backgroundColor  -- Background color
+              fps              -- Frames per second
               initialState     -- Initial state
               view             -- View function
               input            -- Event function
@@ -46,25 +46,13 @@ main = playIO (InWindow "Counter" (400, 400) (0, 0)) -- Or FullScreen
 -- main = play window backgroundColor fps initialGame gameAsPicture transformGame (\\_ ->id)
 
 window :: Display
-window = InWindow "Nice Window" (200, 200) (10, 10)
+window = InWindow "Shoot m up" (700, 700) (10, 10)
 
 backgroundColor :: Color
 backgroundColor = black
 
 fps :: Int
-fps = 130
-
-initialGame :: World
-initialGame = undefined
-
-gameAsPicture :: World -> Picture
-gameAsPicture = undefined
-
-transformGame :: Graphics.Gloss.Interface.IO.Game.Event -> World -> World
-transformGame = undefined
-
-nextFrame :: Float -> World -> World
-nextFrame = undefined
+fps = 30
 
 
 

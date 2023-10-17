@@ -10,9 +10,6 @@ executable GameFp
 
     -- Modules included in this executable, other than Main.
     other-modules:
-                     Game
-                     Logic
-                     Rendering
                      Controller
                      Model
                      View
