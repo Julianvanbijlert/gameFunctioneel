@@ -13,10 +13,14 @@ executable GameFp
                      Game
                      Logic
                      Rendering
+                     Controller
+                     Model
+                     View
                      
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    base ^>= 4.16.4.0,
-                      gloss >= 1.13.1.2
+                      gloss >= 1.13.1.2,
+                      random
     hs-source-dirs:   app
     default-language: Haskell2010

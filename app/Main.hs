@@ -1,5 +1,11 @@
 module Main where
 
+import Controller
+import Model
+import View
+
+import Graphics.Gloss.Interface.IO.Game
+
 import Graphics.Gloss
 
 data Event = Char 
@@ -30,17 +36,23 @@ A function to step the world one iteration. It is passed the period of time (in 
 -> IO ()
 -}
 main :: IO ()
-main = display window white (Circle 80)
+main = playIO (InWindow "Counter" (400, 400) (0, 0)) -- Or FullScreen
+              black            -- Background color
+              fps               -- Frames per second
+              initialState     -- Initial state
+              view             -- View function
+              input            -- Event function
+              step             -- Step function
 -- main = play window backgroundColor fps initialGame gameAsPicture transformGame (\\_ ->id)
 
 window :: Display
 window = InWindow "Nice Window" (200, 200) (10, 10)
 
 backgroundColor :: Color
-backgroundColor = makeColor 255 255 255 255
+backgroundColor = black
 
 fps :: Int
-fps = 30
+fps = 130
 
 initialGame :: World
 initialGame = undefined
@@ -48,10 +60,10 @@ initialGame = undefined
 gameAsPicture :: World -> Picture
 gameAsPicture = undefined
 
-transformGame :: Event -> world -> world
+transformGame :: Graphics.Gloss.Interface.IO.Game.Event -> World -> World
 transformGame = undefined
 
-nextFrame :: Float -> world -> world
+nextFrame :: Float -> World -> World
 nextFrame = undefined
 
 
