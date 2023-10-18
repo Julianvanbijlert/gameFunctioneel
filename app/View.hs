@@ -13,8 +13,8 @@ viewPure :: GameState -> Picture
 viewPure gstate = case infoToShow gstate of
   ShowNothing   -> blank
   InfoToShow b p xs -> Pictures [showBorder b, showPlayer p, showListEnemies xs]
-  --ShowANumber n -> color green (text (show n))
-  --ShowAChar   c -> color green (text [c])
+  ShowANumber n -> color green (text (show n))
+  ShowAChar   c -> color green (text [c])
 
 
 showPlayer :: Player -> Picture

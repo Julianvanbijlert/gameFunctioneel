@@ -8,8 +8,6 @@ import Graphics.Gloss.Interface.IO.Game
 
 import Graphics.Gloss
 
-data Event = Char 
-data World = Undefined 
 
 {- 
 Play :: Display	
@@ -46,13 +44,24 @@ main = playIO window -- Or FullScreen
 -- main = play window backgroundColor fps initialGame gameAsPicture transformGame (\\_ ->id)
 
 window :: Display
-window = InWindow "Shoot m up" (700, 700) (10, 10)
+window = InWindow "Shoot m up" (screenWidth, screenHeight) (10, 10)
 
 backgroundColor :: Color
 backgroundColor = black
 
 fps :: Int
 fps = 30
+
+screenWidth :: Int 
+screenWidth = 700
+screenHeight :: Int 
+screenHeight = 700
+
+sw :: Int
+sw = screenWidth `div` 2
+sh :: Int
+sh = screenHeight `div` 2
+
 
 
 

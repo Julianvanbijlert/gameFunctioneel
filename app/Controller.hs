@@ -24,8 +24,12 @@ step secs gstate
 input :: Event -> GameState -> IO GameState
 input e gstate = return (inputKey e gstate)
 
-inputKey :: Event -> GameState -> GameState
-inputKey (EventKey (Char c) _ _ _) gstate
+inputKey :: Event -> GameState -> GameState 
+inputKey (EventKey (Char c) _ _ _) gstate@(GameState i e) 
   = -- If the user presses a character key, show that one
-    gstate { infoToShow = ShowAChar c }
+    gstate { infoToShow = handleInput c i }
 inputKey _ gstate = gstate -- Otherwise keep the same
+
+handleInput :: Char -> InfoToShow -> InfoToShow
+handleInput 'w' (InfoToShow b (Player (Point(x, y)) (Vector(Point(dx, dy)))) e) = InfoToShow b (Player (Point(x, y + dy)) (Vector(Point(dx, dy)))) e
+handleInput 's' (InfoToShow b (Player (Point(x, y)) (Vector(Point(dx, dy)))) e) = InfoToShow b (Player (Point(x, y - dy)) (Vector(Point(dx, dy)))) e

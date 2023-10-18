@@ -38,16 +38,16 @@ data GameState = GameState {
 
 
 initialPlayer :: Player
-initialPlayer = Player (Point(-300, 0)) (Vector(Point(0, 1)))
+initialPlayer = Player (Point(-300, 0)) (Vector(Point(0, 10)))
 
 borders :: Border
 borders = Border 340 (-340) --top y bottom y
 
 startEnemies :: [Enemy]
-startEnemies = [SpaceShip (Point(100, 100)) (Vector(Point(0,0))),
-                SpaceShip (Point(10, 10)) (Vector(Point(0,0))),
-                SpaceShip (Point(10, 100)) (Vector(Point(0,0))),
-                Rock (Point(200, 200)) (Vector(Point(100, 0))) ]
+startEnemies = [SpaceShip (Point(100, 100)) (Vector(Point(0,0)))    ,
+                SpaceShip (Point(10, 10))   (Vector(Point(0,0)))    ,
+                SpaceShip (Point(10, 100))  (Vector(Point(0,0)))    ,
+                Rock      (Point(200, 200)) (Vector(Point(100, 0))) ]
 
 initialState :: GameState
 initialState = GameState (InfoToShow borders initialPlayer startEnemies)  0
