@@ -5,16 +5,35 @@ module View where
 import Graphics.Gloss
 import Model
 
+
 view :: GameState -> IO Picture
 view = return . viewPure
 
 viewPure :: GameState -> Picture
 viewPure gstate = case infoToShow gstate of
   ShowNothing   -> blank
-  ShowANumber n -> color green (text (show n))
-  ShowAChar   c -> color green (text [c])
-  ShowPlayer (Player (Point(x, y)) p) -> color green (Polygon [(x, y-10), (x, y +10), (x+30, y)] )--[(0, 0), (30, 10), (0, 20)])
-  showRock -> color white (Polygon [(0, 50), (43.3, 25), (43.3, -25), (0, -50), (-43.3, -25), (-43.3, 25)])
+  InfoToShow b p xs -> Pictures [showBorder b, showPlayer p, showListEnemies xs]
+  --ShowANumber n -> color green (text (show n))
+  --ShowAChar   c -> color green (text [c])
+
+
+showPlayer :: Player -> Picture
+showPlayer (Player (Point(x, y)) _) = color green (Polygon [(x, y-10), (x, y +10), (x+30, y)] )--triangle
+
+showListEnemies :: [Enemy] -> Picture
+showListEnemies [] = blank
+showListEnemies (x: xs) = Pictures[showEnemy x, showListEnemies xs]
+
+showEnemy :: Enemy -> Picture
+showEnemy  (Rock (Point(x, y)) _ ) = color white (Polygon [(0, 50), (43.3, 25), (43.3, -25), (0, -50), (-43.3, -25), (-43.3, 25)]) 
+showEnemy  (SpaceShip (Point (x, y)) _ ) = color red (Polygon [(x-10, y-10),(x+10, y+10), (x-10, y+10), (x+10, y-10)]) --square
+
+showBorder :: Border -> Picture
+showBorder (Border ytop ybot) = pictures[ color green (Polygon [(sw, sh), (sw, ytop), (-sw , ytop), (-sw, sh) ]),
+                                          color green (Polygon [(sw, -sh), (sw, ybot), (-sw , ybot), (-sw, -sh) ]) ]
+                                            where sw = 350  --helft van screenwidth
+                                                  sh = 350  --helft van screenheight
+
 
 
 stateAction :: State -> Picture --niet goed

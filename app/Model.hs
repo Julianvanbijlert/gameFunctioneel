@@ -5,8 +5,10 @@ data Point = Point (Float, Float)
 data Vector = Vector Point
 
 data Player = Player Point Vector
-data Enemy = Spaceship Point Vector | --can also shoot
+data Enemy = SpaceShip Point Vector | --can also shoot
              Rock      Point Vector
+
+data Border = Border Float Float --top y, bottom y
 
 data Powerup = FastShot | DoubleBullet | Extralife 
 
@@ -14,11 +16,15 @@ data Powerup = FastShot | DoubleBullet | Extralife
 data State = Running | Paused | GameOver
 data Game = Game {}
 
-data InfoToShow = ShowNothing
+data InfoToShow = InfoToShow{border :: Border, player :: Player, enemies :: [Enemy]} 
+  
+                | ShowNothing
                 | ShowANumber Int
                 | ShowAChar   Char
-                | ShowPlayer Player
-                | ShowRock
+              --  | ShowBorder Border
+              --  | ShowPlayer Player
+              --  | ShowEnemy Enemy
+              --  | ShowListEnemy [Enemy]
 
 
 nO_SECS_BETWEEN_CYCLES :: Float
@@ -29,9 +35,18 @@ data GameState = GameState {
                  , elapsedTime :: Float
                  }
 
-initialState :: GameState
-initialState = GameState (ShowPlayer initialPlayer) 0
+
 
 initialPlayer :: Player
-initialPlayer = Player (Point(0, 0)) (Vector(Point(0, 1)))
+initialPlayer = Player (Point(-300, 0)) (Vector(Point(0, 1)))
 
+borders :: Border
+borders = Border 340 (-340)
+
+startEnemies :: [Enemy]
+startEnemies = [SpaceShip (Point(100, 100)) (Vector(Point(0,0))),
+                SpaceShip (Point(10, 10)) (Vector(Point(0,0))),
+                SpaceShip (Point(10, 100)) (Vector(Point(0,0))) ]
+
+initialState :: GameState
+initialState = GameState (InfoToShow borders initialPlayer startEnemies)  0
