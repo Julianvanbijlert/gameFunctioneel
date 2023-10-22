@@ -50,7 +50,7 @@ backgroundColor :: Color
 backgroundColor = black
 
 fps :: Int
-fps = 130
+fps = 30
 
 screenWidth :: Int 
 screenWidth = 700
