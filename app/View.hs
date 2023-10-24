@@ -46,12 +46,28 @@ showScore i = color white (Translate (-50) 300 (Scale 0.3 0.3 (text (show i))))
 
 --we made this player instead of putting it in the game in case we wanted to add multiplayer
 showLives :: Player -> Picture
-showLives (Player (Point(x, y)) _ h) = showLive h
+showLives (Player (Point(x, y)) _ h) = showLive (Point(0, 0)) h
 
+showLive :: Model.Point -> [Heart] -> Picture
+showLive _ [] = blank
+showLive p@(Point (x, y)) (Heart : xs) = Pictures[drawHeart p, showLive (Point(x + 10, y)) xs]
+showLive p@(Point (x, y)) (Shield : xs) = Pictures[drawShield p, showLive (Point(x + 10, y)) xs]
 
-showLive :: [Heart] -> Picture
-showLive [] = blank
-showLive a = color white (Translate (-100) 300 (Scale 0.3 0.3 (text (show (length a)))))
+drawHeart :: Model.Point -> Picture
+drawHeart p = heart
+  --color white (Translate (-100) 300 (Scale 0.3 0.3 (text (show (length p)))))
+
+--https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.vecteezy.com%2Fpng%2F12658366-heart-shaped-love-icon-symbol-for-pictogram-app-website-logo-or-graphic-design-element-pixel-art-style-illustration-format-png&psig=AOvVaw3I1hrWNnEue6ymB1XQF6uH&ust=1698229669669000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCdnNS8joIDFQAAAAAdAAAAABAE
+heart :: Picture
+heart = color white (Translate (-100) 300 (Scale 0.3 0.3 (text (show "<3"))))
+
+drawShield :: Model.Point -> Picture
+drawShield p = shield
+
+--Dall-e
+shield :: Picture
+shield = blank
+
 
 
 stateAction :: State -> Picture --niet goed

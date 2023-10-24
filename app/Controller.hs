@@ -20,15 +20,15 @@ step secs gstate@(GameState(InfoToShow b p xs bs) _ s sc)
   | elapsedTime gstate + secs > numberOfSecsBetweenActions
   =
     return if checkIfCollided p xs || checkIfCollided p bs
-           then moveEverything $ removeHeart gstate { elapsedTime = 0 }
-           else moveEverything gstate { elapsedTime = 0 }
+           then moveEverything $ removeHeart gstate { elapsedTime = 0, score = sc - 100}
+           else checkState gstate { elapsedTime = 0}
 
 
   | otherwise
   = -- Just update the elapsed time
      return if checkIfCollided p xs || checkIfCollided p bs
-           then moveEverything $ removeHeart gstate { elapsedTime = elapsedTime gstate + secs }
-           else moveEverything gstate  { elapsedTime = elapsedTime gstate + secs }
+           then moveEverything $ removeHeart gstate { elapsedTime = elapsedTime gstate + secs, score = sc - 100 }
+           else checkState gstate  { elapsedTime = elapsedTime gstate + secs }
 
 checkState :: GameState -> GameState
 checkState gstate@(GameState i t Running sc) = (.) shootBulletEs moveEverything gstate { elapsedTime = 0, score = sc + 1 }
