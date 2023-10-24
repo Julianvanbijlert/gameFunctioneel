@@ -14,21 +14,24 @@ import Graphics.Gloss.Data.Color
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step secs gstate@(GameState(InfoToShow b p xs bs) _)
+step secs gstate@(GameState(InfoToShow b p xs bs) _ s)
   | elapsedTime gstate + secs > numberOfSecsBetweenActions
   = 
-    return $ moveEverything gstate { elapsedTime = 0 }
+    return $ checkState gstate { elapsedTime = 0 }
     
   | otherwise
   = -- Just update the elapsed time
      return $ moveEverything gstate { elapsedTime = elapsedTime gstate + secs }
     
-
+checkState :: GameState -> GameState
+checkState gstate@(GameState i t Running) = moveEverything gstate { elapsedTime = 0 }
+checkState gstate@(GameState i t Paused) = gstate
+checkState gstate@(GameState i t GameOver) = gstate
 
 moveEverything :: GameState -> GameState
-moveEverything (GameState(InfoToShow b p xs bs) t) =  do let enem = moveAllEnemies xs
-                                                         let bul  = moveAllBullets bs
-                                                         GameState (InfoToShow b p enem bul) t
+moveEverything (GameState (InfoToShow b p xs bs) t state) =  do let enem = moveAllEnemies xs
+                                                                let bul  = moveAllBullets bs
+                                                                GameState (InfoToShow b p enem bul) t state
 
 moveAllEnemies :: [Enemy] -> [Enemy]
 moveAllEnemies [] =  []
@@ -74,13 +77,17 @@ hittWall (SpaceShip p (Vector(dx, dy))) = SpaceShip p (Vector(dx, -dy))
 hittWall rock = destroyEnemy rock
 
 inputKey :: Event -> GameState -> GameState 
-inputKey (EventKey (Char c) Down _  _) gstate@(GameState i e) 
+inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Running) 
+  = gstate{state = Paused}
+inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Paused) 
+  = gstate{state = Running}
+inputKey (EventKey (Char c) Down _  _) gstate@(GameState i e Running) 
   = -- If the user presses a character key, show that one
-    gstate { infoToShow = handleInput c i }
-       
-inputKey (EventKey (SpecialKey k) Down _ _) gstate@(GameState i e) 
-  = 
-    gstate {infoToShow = handleInputSpecial k i}
+  gstate { infoToShow = handleInput c i }    
+inputKey (EventKey (SpecialKey k) Down _ _) gstate@(GameState i e Running) 
+  = gstate {infoToShow = handleInputSpecial k i}
+  
+inputKey _ gstate@(GameState i e Paused) = gstate
 inputKey _ gstate = gstate -- Otherwise keep the same
 
 {-Dit is een functie die inputs handled, alleen moet er nog gefixt worden dat ingedrukt houden 

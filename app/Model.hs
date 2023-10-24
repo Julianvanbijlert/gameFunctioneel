@@ -30,12 +30,13 @@ data InfoToShow = InfoToShow{border :: Border, player :: Player, enemies :: [Ene
               --  | ShowListEnemy [Enemy]
 
 
-nO_SECS_BETWEEN_CYCLES :: Float
-nO_SECS_BETWEEN_CYCLES = 0.2
+numberOfSecsBetweenActions :: Float
+numberOfSecsBetweenActions = 0.0002
 
 data GameState = GameState {
                    infoToShow  :: InfoToShow
                  , elapsedTime :: Float
+                 , state :: State
                  }
 
 
@@ -53,4 +54,4 @@ startEnemies = [SpaceShip (Point(100, 100)) (Vector(-1,3))    ,
                 Rock      (Point(200, 200)) (Vector(-2, -1)) ]
 
 initialState :: GameState
-initialState = GameState (InfoToShow borders initialPlayer startEnemies [])  0
+initialState = GameState (InfoToShow borders initialPlayer startEnemies [])  0 Running
