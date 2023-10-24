@@ -7,8 +7,10 @@ newtype Vector = Vector (Float, Float)
 data Player = Player       Point Vector [Heart]
 data Enemy =  SpaceShip    Point Vector | --can also shoot
               Rock         Point Vector
+
 data Bullet = EnemyBullet  Point Vector |
               PlayerBullet Point Vector
+              
 data Heart =  Heart |
               Shield
 
@@ -44,7 +46,7 @@ data GameState = GameState {
 
 
 initialPlayer :: Player
-initialPlayer = Player (Point(-300, 0)) (Vector(0, 10)) [Heart, Heart, Heart]
+initialPlayer = Player (Point(-300, 0)) (Vector(0, 10)) [Heart, Heart, Heart, Shield]
 
 borders :: Border
 borders = Border 340 (-340) --top y bottom y

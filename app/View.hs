@@ -1,7 +1,7 @@
 module View where
   -- | This module defines how to turn
   --   the game state into a picture
-  
+
 import Graphics.Gloss
 import Model
 
@@ -25,7 +25,7 @@ showListEnemies [] = blank
 showListEnemies (x: xs) = Pictures[showEnemy x, showListEnemies xs]
 
 showEnemy :: Enemy -> Picture
-showEnemy  (Rock (Point(x, y)) _ ) = color white (Polygon [(x, y+20), (x+17, y+10), (x+17, y-10), (x, y-20), (x-17, y-10), (x-17, y+10)]) 
+showEnemy  (Rock (Point(x, y)) _ ) = color white (Polygon [(x, y+20), (x+17, y+10), (x+17, y-10), (x, y-20), (x-17, y-10), (x-17, y+10)])
 showEnemy  (SpaceShip (Point (x, y)) _ ) = color red (Polygon [(x-10, y-10),(x+10, y+10), (x-10, y+10), (x+10, y-10)]) --square
 
 showBullets :: [Bullet] -> Picture
@@ -50,23 +50,24 @@ showLives (Player (Point(x, y)) _ h) = showLive (Point(0, 0)) h
 
 showLive :: Model.Point -> [Heart] -> Picture
 showLive _ [] = blank
-showLive p@(Point (x, y)) (Heart : xs) = Pictures[drawHeart p, showLive (Point(x + 10, y)) xs]
-showLive p@(Point (x, y)) (Shield : xs) = Pictures[drawShield p, showLive (Point(x + 10, y)) xs]
+showLive p@(Point (x, y)) (Heart : xs) = Pictures[drawHeart p, showLive (Point(x + 50, y)) xs]
+showLive p@(Point (x, y)) (Shield : xs) = Pictures[drawShield p, showLive (Point(x + 50, y)) xs]
 
 drawHeart :: Model.Point -> Picture
-drawHeart p = heart
+drawHeart (Point (x, y)) = Translate (-300 + x) (300 + y) heart
   --color white (Translate (-100) 300 (Scale 0.3 0.3 (text (show (length p)))))
 
 --https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.vecteezy.com%2Fpng%2F12658366-heart-shaped-love-icon-symbol-for-pictogram-app-website-logo-or-graphic-design-element-pixel-art-style-illustration-format-png&psig=AOvVaw3I1hrWNnEue6ymB1XQF6uH&ust=1698229669669000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCdnNS8joIDFQAAAAAdAAAAABAE
 heart :: Picture
-heart = color white (Translate (-100) 300 (Scale 0.3 0.3 (text (show "<3"))))
+
+heart = color white (Scale 0.2 0.2 (text (show "<3")))
 
 drawShield :: Model.Point -> Picture
-drawShield p = shield
+drawShield (Point (x, y)) = Translate (-300 + x) (300 + y) shield
 
 --Dall-e
 shield :: Picture
-shield = blank
+shield = color white (Scale 0.2 0.2 (text (show "U")))
 
 
 
