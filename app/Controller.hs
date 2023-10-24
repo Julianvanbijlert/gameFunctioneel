@@ -24,7 +24,7 @@ step secs gstate@(GameState(InfoToShow b p xs bs) _ s)
      return $ moveEverything gstate { elapsedTime = elapsedTime gstate + secs }
     
 checkState :: GameState -> GameState
-checkState gstate@(GameState i t Running) = moveEverything gstate { elapsedTime = 0 }
+checkState gstate@(GameState i t Running) = (.) shootBulletEs moveEverything gstate { elapsedTime = 0 }
 checkState gstate@(GameState i t Paused) = gstate
 checkState gstate@(GameState i t GameOver) = gstate
 
@@ -65,11 +65,18 @@ pauseGame = undefined
 spawnPowerup :: GameState -> GameState
 spawnPowerup = undefined
 
-shootBulletP :: GameState -> GameState
-shootBulletP = undefined
 
-shootBulletE :: GameState -> GameState
-shootBulletE = undefined
+shootBulletEs :: GameState -> GameState
+shootBulletEs g@(GameState i t s) = g{infoToShow = shootBulletE 0 [] i}
+
+--doet nog niets met random
+shootBulletE :: Float -> [Enemy] -> InfoToShow -> InfoToShow
+shootBulletE random le (InfoToShow b (Player (Point(x,y)) v) (e@(Rock p vec): es) bul)  = 
+      shootBulletE (random + 1) (e: le) (InfoToShow b (Player (Point(x,y)) v) es bul) 
+shootBulletE random le (InfoToShow b (Player (Point(x,y)) v) (e@(SpaceShip (Point(xt, yt)) vec): es) bul) = 
+      shootBulletE (random + 1) (e : le) (InfoToShow b (Player (Point(x,y)) v) es (EnemyBullet (Point(xt - 20, yt) ) (Vector(-10, 0)) : bul))
+shootBulletE random le i@(InfoToShow b (Player (Point(x,y)) v) [] bul) = i{enemies = le}
+
 
 --if spaceship hits a wall it will go back in the screen, if rock does this it breaks
 hittWall :: Enemy -> Enemy
