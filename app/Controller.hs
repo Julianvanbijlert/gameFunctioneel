@@ -14,24 +14,25 @@ import Graphics.Gloss.Data.Color
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step secs gstate@(GameState(InfoToShow b p xs bs) _ s)
+step secs gstate@(GameState(InfoToShow b p xs bs) _ s sc)
   | elapsedTime gstate + secs > numberOfSecsBetweenActions
   = 
-    return $ checkState gstate { elapsedTime = 0 }
+    return $ checkState gstate { elapsedTime = 0}
     
   | otherwise
   = -- Just update the elapsed time
      return $ moveEverything gstate { elapsedTime = elapsedTime gstate + secs }
     
 checkState :: GameState -> GameState
-checkState gstate@(GameState i t Running) = (.) shootBulletEs moveEverything gstate { elapsedTime = 0 }
-checkState gstate@(GameState i t Paused) = gstate
-checkState gstate@(GameState i t GameOver) = gstate
+checkState gstate@(GameState i t Running sc) = (.) shootBulletEs moveEverything gstate { elapsedTime = 0, score = sc + 1 }
+checkState gstate@(GameState i t Paused sc) = gstate
+checkState gstate@(GameState i t GameOver sc) = gstate
 
 moveEverything :: GameState -> GameState
-moveEverything (GameState (InfoToShow b p xs bs) t state) =  do let enem = moveAllEnemies xs
-                                                                let bul  = moveAllBullets bs
-                                                                GameState (InfoToShow b p enem bul) t state
+moveEverything (GameState (InfoToShow b p xs bs) t state sc) = GameState (InfoToShow b p enem bul) t state sc
+                                                                where enem = moveAllEnemies xs
+                                                                      bul  = moveAllBullets bs
+                                                              
 
 moveAllEnemies :: [Enemy] -> [Enemy]
 moveAllEnemies [] =  []
@@ -67,15 +68,15 @@ spawnPowerup = undefined
 
 
 shootBulletEs :: GameState -> GameState
-shootBulletEs g@(GameState i t s) = g{infoToShow = shootBulletE 0 [] i}
+shootBulletEs g@(GameState i t s sc) = g{infoToShow = shootBulletE 0 [] i}
 
 --doet nog niets met random
 shootBulletE :: Float -> [Enemy] -> InfoToShow -> InfoToShow
-shootBulletE random le (InfoToShow b (Player (Point(x,y)) v) (e@(Rock p vec): es) bul)  = 
-      shootBulletE (random + 1) (e: le) (InfoToShow b (Player (Point(x,y)) v) es bul) 
-shootBulletE random le (InfoToShow b (Player (Point(x,y)) v) (e@(SpaceShip (Point(xt, yt)) vec): es) bul) = 
-      shootBulletE (random + 1) (e : le) (InfoToShow b (Player (Point(x,y)) v) es (EnemyBullet (Point(xt - 20, yt) ) (Vector(-10, 0)) : bul))
-shootBulletE random le i@(InfoToShow b (Player (Point(x,y)) v) [] bul) = i{enemies = le}
+shootBulletE random le (InfoToShow b (Player (Point(x,y)) v h) (e@(Rock p vec): es) bul)  = 
+      shootBulletE random (e: le) (InfoToShow b (Player (Point(x,y)) v h) es bul) 
+shootBulletE random le (InfoToShow b (Player (Point(x,y)) v h) (e@(SpaceShip (Point(xt, yt)) vec): es) bul) = 
+      shootBulletE random (e : le) (InfoToShow b (Player (Point(x,y)) v h) es (EnemyBullet (Point(xt - 20, yt) ) (Vector(-10, 0)) : bul))
+shootBulletE random le i@(InfoToShow b (Player (Point(x,y)) v _) [] bul) = i{enemies = le}
 
 
 --if spaceship hits a wall it will go back in the screen, if rock does this it breaks
@@ -84,29 +85,29 @@ hittWall (SpaceShip p (Vector(dx, dy))) = SpaceShip p (Vector(dx, -dy))
 hittWall rock = destroyEnemy rock
 
 inputKey :: Event -> GameState -> GameState 
-inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Running) 
+inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Running sc) 
   = gstate{state = Paused}
-inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Paused) 
+inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Paused sc) 
   = gstate{state = Running}
-inputKey (EventKey (Char c) Down _  _) gstate@(GameState i e Running) 
+inputKey (EventKey (Char c) Down _  _) gstate@(GameState i e Running sc) 
   = -- If the user presses a character key, show that one
   gstate { infoToShow = handleInput c i }    
-inputKey (EventKey (SpecialKey k) Down _ _) gstate@(GameState i e Running) 
+inputKey (EventKey (SpecialKey k) Down _ _) gstate@(GameState i e Running sc) 
   = gstate {infoToShow = handleInputSpecial k i}
   
-inputKey _ gstate@(GameState i e Paused) = gstate
+inputKey _ gstate@(GameState i e Paused sc) = gstate
 inputKey _ gstate = gstate -- Otherwise keep the same
 
 {-Dit is een functie die inputs handled, alleen moet er nog gefixt worden dat ingedrukt houden 
 meerdere interacties doet en dat het niet dubbel aangeroepen is als het omhoog gaat en losgelaten wordt-}
 handleInput :: Char -> InfoToShow -> InfoToShow
-handleInput 'w' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy))) e bul) = InfoToShow b (Player (Point(x, y + dy)) (Vector(dx, dy))) e bul
-handleInput 's' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy))) e bul) = InfoToShow b (Player (Point(x, y - dy)) (Vector(dx, dy))) e bul
-handleInput 'f' (InfoToShow b p@(Player (Point(x, y)) _ ) e bul) = InfoToShow b p e (PlayerBullet (Point(x + 40, y)) (Vector(5, 0)) : bul)
+handleInput 'w' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point(x, y + dy)) (Vector(dx, dy)) h) e bul
+handleInput 's' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point(x, y - dy)) (Vector(dx, dy)) h) e bul
+handleInput 'f' (InfoToShow b p@(Player (Point(x, y)) _ _) e bul) = InfoToShow b p e (PlayerBullet (Point(x + 40, y)) (Vector(5, 0)) : bul)
 handleInput _ i = i
 
 handleInputSpecial :: SpecialKey -> InfoToShow -> InfoToShow
-handleInputSpecial KeyUp    (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy))) e bul) = InfoToShow b (Player (Point(x, y + dy)) (Vector(dx, dy))) e bul
-handleInputSpecial KeyDown  (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy))) e bul) = InfoToShow b (Player (Point(x, y - dy)) (Vector(dx, dy))) e bul
-handleInputSpecial KeySpace (InfoToShow b p@(Player (Point(x, y)) _ ) e bul) = InfoToShow b p e (PlayerBullet (Point(x + 40, y)) (Vector(5, 0)) : bul)
+handleInputSpecial KeyUp    (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point(x, y + dy)) (Vector(dx, dy)) h) e bul
+handleInputSpecial KeyDown  (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point(x, y - dy)) (Vector(dx, dy)) h) e bul
+handleInputSpecial KeySpace (InfoToShow b p@(Player (Point(x, y)) _ _) e bul) = InfoToShow b p e (PlayerBullet (Point(x + 40, y)) (Vector(5, 0)) : bul)
 handleInputSpecial _ i = i

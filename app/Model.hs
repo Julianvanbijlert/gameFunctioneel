@@ -4,12 +4,13 @@ module Model where
 newtype Point = Point (Float, Float)
 newtype Vector = Vector (Float, Float)
 
-data Player = Player       Point Vector
+data Player = Player       Point Vector [Heart]
 data Enemy =  SpaceShip    Point Vector | --can also shoot
               Rock         Point Vector
 data Bullet = EnemyBullet  Point Vector |
               PlayerBullet Point Vector
-
+data Heart =  Heart |
+              Shield
 
 data Border = Border Float Float --top y, bottom y
 
@@ -37,12 +38,13 @@ data GameState = GameState {
                    infoToShow  :: InfoToShow
                  , elapsedTime :: Float
                  , state :: State
+                 , score :: Int
                  }
 
 
 
 initialPlayer :: Player
-initialPlayer = Player (Point(-300, 0)) (Vector(0, 10))
+initialPlayer = Player (Point(-300, 0)) (Vector(0, 10)) [Heart, Heart, Heart]
 
 borders :: Border
 borders = Border 340 (-340) --top y bottom y
@@ -54,4 +56,4 @@ startEnemies = [SpaceShip (Point(100, 100)) (Vector(-1,3))    ,
                 Rock      (Point(200, 200)) (Vector(-2, -1)) ]
 
 initialState :: GameState
-initialState = GameState (InfoToShow borders initialPlayer startEnemies [])  0 Running
+initialState = GameState (InfoToShow borders initialPlayer startEnemies [])  0 Running 0
