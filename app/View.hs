@@ -51,6 +51,7 @@ showLives (Player (Point(x, y)) _ h) = showLive h
 
 showLive :: [Heart] -> Picture
 showLive [] = blank
+showLive a = color white (Translate (-100) 300 (Scale 0.3 0.3 (text (show (length a)))))
 
 
 stateAction :: State -> Picture --niet goed
