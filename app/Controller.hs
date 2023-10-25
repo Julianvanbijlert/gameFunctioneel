@@ -19,27 +19,35 @@ step :: Float -> GameState -> IO GameState
 step secs gstate@(GameState(InfoToShow b p xs bs) _ s sc)
   | elapsedTime gstate + secs > numberOfSecsBetweenActions
   =
-    return if checkIfCollided p xs || checkIfCollided p bs
-           then moveEverything $ removeHeart gstate { elapsedTime = 0, score = sc - 100}
-           else checkState gstate { elapsedTime = 0}
+    return $ checkState gstate{ elapsedTime = 0}
 
 
   | otherwise
   = -- Just update the elapsed time
-     return if checkIfCollided p xs || checkIfCollided p bs
-           then moveEverything $ removeHeart gstate { elapsedTime = elapsedTime gstate + secs, score = sc - 100 }
-           else checkState gstate  { elapsedTime = elapsedTime gstate + secs }
+     return $ checkState gstate{ elapsedTime = elapsedTime gstate + secs }
 
 checkState :: GameState -> GameState
-checkState gstate@(GameState i t Running sc) = (.) shootBulletEs moveEverything gstate { elapsedTime = 0, score = sc + 1 }
+checkState gstate@(GameState i t Running sc) = collideFunction . shootBulletEs . moveEverything $ gstate {score = sc + 1 }
 checkState gstate@(GameState i t Paused sc) = gstate
 checkState gstate@(GameState i t GameOver sc) = gstate
+
+collideFunction :: GameState -> GameState
+collideFunction gstate@(GameState(InfoToShow b p xs bs) _ s sc) = 
+    if checkIfCollided p xs || checkIfCollided p bs
+         then (.) checkDead removeHeart gstate{score = sc - 10}
+         else gstate  
 
 moveEverything :: GameState -> GameState
 moveEverything (GameState (InfoToShow b p xs bs) t state sc) = GameState (InfoToShow b p enem bul) t state sc
                                                                 where enem = moveAllEnemies xs
                                                                       bul  = moveAllBullets bs
-
+checkDead :: GameState -> GameState
+checkDead gstate@(GameState i t Running sc)  | isDead i = gstate{state = GameOver}
+                                             | otherwise = gstate
+isDead :: InfoToShow -> Bool
+isDead (InfoToShow b (Player k l []) xs bs) = True
+isDead (InfoToShow b (Player k l [x]) xs bs) = False
+isDead (InfoToShow b (Player k l xz) xs bs) = False                                                   
 
 moveAllEnemies :: [Enemy] -> [Enemy]
 moveAllEnemies [] =  []

@@ -59,7 +59,6 @@ drawHeart (Point (x, y)) = Translate (-300 + x) (300 + y) heart
 
 --https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.vecteezy.com%2Fpng%2F12658366-heart-shaped-love-icon-symbol-for-pictogram-app-website-logo-or-graphic-design-element-pixel-art-style-illustration-format-png&psig=AOvVaw3I1hrWNnEue6ymB1XQF6uH&ust=1698229669669000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCdnNS8joIDFQAAAAAdAAAAABAE
 heart :: Picture
-
 heart = color white (Scale 0.2 0.2 (text (show "<3")))
 
 drawShield :: Model.Point -> Picture
