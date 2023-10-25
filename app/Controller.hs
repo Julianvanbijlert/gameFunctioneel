@@ -18,13 +18,13 @@ import Graphics.Gloss.Data.Color
 step :: Float -> GameState -> IO GameState
 step secs gstate@(GameState(InfoToShow b p xs bs) _ s sc)
   | elapsedTime gstate + secs > numberOfSecsBetweenActions
-  =
-    return $ checkState gstate{ elapsedTime = 0}
+  = --nog random toevoegen
+    return . spawnEnemyOrPowerUp 6 . checkState $ gstate{ elapsedTime = 0}
 
 
   | otherwise
   = -- Just update the elapsed time
-     return $ checkState gstate{ elapsedTime = elapsedTime gstate + secs }
+     return . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
 
 checkState :: GameState -> GameState
 checkState gstate@(GameState i t Running sc) = collideFunction . shootBulletEs . moveEverything $ gstate {score = sc + 1 }
@@ -46,7 +46,6 @@ checkDead gstate@(GameState i t Running sc)  | isDead i = gstate{state = GameOve
                                              | otherwise = gstate
 isDead :: InfoToShow -> Bool
 isDead (InfoToShow b (Player k l []) xs bs) = True
-isDead (InfoToShow b (Player k l [x]) xs bs) = False
 isDead (InfoToShow b (Player k l xz) xs bs) = False                                                   
 
 moveAllEnemies :: [Enemy] -> [Enemy]
@@ -100,6 +99,15 @@ pauseGame = undefined
 spawnPowerup :: GameState -> GameState
 spawnPowerup = undefined
 
+spawnEnemyOrPowerUp :: Float -> GameState -> GameState
+spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) t s sc) | i > 5 = g{infoToShow = InfoToShow b p (randomEnemy : e) h}
+                                                                | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
+
+randomEnemy :: Enemy
+randomEnemy = undefined
+
+randomPowerup :: Powerup
+randomPowerup = undefined
 
 shootBulletEs :: GameState -> GameState
 shootBulletEs g@(GameState i t s sc) = g{infoToShow = shootBulletE 0 [] i}
