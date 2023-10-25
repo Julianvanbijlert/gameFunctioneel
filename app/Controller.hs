@@ -5,6 +5,16 @@ module Controller where
   --   in response to time and user input
 
 import Model
+    ( numberOfSecsBetweenActions,
+      Powerup,
+      Vector(Vector),
+      Point(Point),
+      State(Paused, GameOver, Running),
+      Bullet(..),
+      Enemy(..),
+      Player(..),
+      InfoToShow(InfoToShow, enemies),
+      GameState(GameState, elapsedTime, score, state, infoToShow) )
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
@@ -16,15 +26,15 @@ import Graphics.Gloss.Data.Color
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step secs gstate@(GameState(InfoToShow b p xs bs) _ s sc _)
-  | elapsedTime gstate + secs > numberOfSecsBetweenActions
-  = --nog random toevoegen
-    return . spawnEnemyOrPowerUp 6 . checkState $ gstate{ elapsedTime = 0}
-
-
-  | otherwise
-  = -- Just update the elapsed time
-     return . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
+step secs gstate@(GameState i h s sc sg)
+    | elapsedTime gstate + secs > numberOfSecsBetweenActions = --nog random toevoegen
+      return . spawnEnemyOrPowerUp (fst j) . checkState $ (GameState i h s sc (snd j)){ elapsedTime = 0}
+    | otherwise = -- Just update the elapsed time
+      return . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
+  where
+    j = makeRandomCoordinate sg 0 100
+  
+     
 
 checkState :: GameState -> GameState
 checkState gstate@(GameState i _ Running sc _) = collideFunction . shootBulletEs . moveEverything $ gstate {score = sc + 1 }
@@ -100,7 +110,7 @@ spawnPowerup :: GameState -> GameState
 spawnPowerup = undefined
 
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
-spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k n m sg) | i > 5 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k n m (snd (randomEnemy g))
+spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k n m sg) | i > 99 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k n m (snd (randomEnemy g))
                                                                 | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
 
 makeRandomCoordinate :: StdGen -> Float -> Float -> (Float, StdGen)
@@ -108,11 +118,17 @@ makeRandomCoordinate g0 x y = (a, g1)
     where
       (a,g1) =  randomR (x,y :: Float) g0
 
+normalize :: Model.Vector -> Model.Vector
+normalize (Vector (x,y))= Vector (x / p, y / p)
+          where p = sqrt (x*x + y*y)
+
 randomEnemy :: GameState-> (Enemy, StdGen)
-randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | (fst f) < 5  = (SpaceShip (Point p) (Vector (fst p - x, snd p - y)), snd f)
-                                                                                | otherwise = (Rock (Point p) (Vector(fst p - x, snd p - y)), snd f)
-                                                                                    where f = makeRandomCoordinate sg 0 100
-                                                                                          p = (fst f, 350)
+randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | (fst g) > 5  = (SpaceShip (Point p) (v), snd g)
+                                                                                | otherwise = (Rock (Point p) (v), snd g)
+                                                                                    where f = makeRandomCoordinate sg (-350) 350
+                                                                                          g = makeRandomCoordinate (snd f) 0 10
+                                                                                          p = (350,(fst f))
+                                                                                          v = normalize(Vector (x- fst p , y-snd p ))
 
 
 randomPowerup :: Powerup
