@@ -1,5 +1,5 @@
-{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+
 module Controller where
   -- | This module defines how the state changes
   --   in response to time and user input
@@ -16,7 +16,7 @@ import Graphics.Gloss.Data.Color
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step secs gstate@(GameState(InfoToShow b p xs bs) _ s sc)
+step secs gstate@(GameState(InfoToShow b p xs bs) _ s sc _)
   | elapsedTime gstate + secs > numberOfSecsBetweenActions
   = --nog random toevoegen
     return . spawnEnemyOrPowerUp 6 . checkState $ gstate{ elapsedTime = 0}
@@ -27,26 +27,26 @@ step secs gstate@(GameState(InfoToShow b p xs bs) _ s sc)
      return . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
 
 checkState :: GameState -> GameState
-checkState gstate@(GameState i t Running sc) = collideFunction . shootBulletEs . moveEverything $ gstate {score = sc + 1 }
-checkState gstate@(GameState i t Paused sc) = gstate
-checkState gstate@(GameState i t GameOver sc) = gstate
+checkState gstate@(GameState i _ Running sc _) = collideFunction . shootBulletEs . moveEverything $ gstate {score = sc + 1 }
+checkState gstate@(GameState i t Paused sc _) = gstate
+checkState gstate@(GameState i t GameOver sc _) = gstate
 
 collideFunction :: GameState -> GameState
-collideFunction gstate@(GameState(InfoToShow b p xs bs) _ s sc) = 
+collideFunction gstate@(GameState(InfoToShow _ p xs bs) _ _ sc _) =
     if checkIfCollided p xs || checkIfCollided p bs
          then (.) checkDead removeHeart gstate{score = sc - 10}
-         else gstate  
+         else gstate
 
 moveEverything :: GameState -> GameState
-moveEverything (GameState (InfoToShow b p xs bs) t state sc) = GameState (InfoToShow b p enem bul) t state sc
+moveEverything (GameState (InfoToShow b p xs bs) t state sc sg) = GameState (InfoToShow b p enem bul) t state sc sg
                                                                 where enem = moveAllEnemies xs
                                                                       bul  = moveAllBullets bs
 checkDead :: GameState -> GameState
-checkDead gstate@(GameState i t Running sc)  | isDead i = gstate{state = GameOver}
+checkDead gstate@(GameState i _ Running _ _)  | isDead i = gstate{state = GameOver}
                                              | otherwise = gstate
 isDead :: InfoToShow -> Bool
 isDead (InfoToShow b (Player k l []) xs bs) = True
-isDead (InfoToShow b (Player k l xz) xs bs) = False                                                   
+isDead (InfoToShow b (Player k l xz) xs bs) = False
 
 moveAllEnemies :: [Enemy] -> [Enemy]
 moveAllEnemies [] =  []
@@ -83,11 +83,11 @@ destroyEnemy :: Enemy -> Enemy --redo
 destroyEnemy = undefined
 
 removeHeart :: GameState -> GameState
-removeHeart (GameState (InfoToShow b (Player k l []) xs bs) m n o) = GameState (InfoToShow b p xs bs) m n o
+removeHeart (GameState (InfoToShow b (Player k l []) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
                                                                         where p = Player k l []
-removeHeart (GameState (InfoToShow b (Player k l [x]) xs bs) m n o) = GameState (InfoToShow b p xs bs) m n o
+removeHeart (GameState (InfoToShow b (Player k l [x]) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
                                                                         where p = Player k l []
-removeHeart (GameState (InfoToShow b (Player k l (y:ys)) xs bs) m n o) = GameState (InfoToShow b p xs bs) m n o
+removeHeart (GameState (InfoToShow b (Player k l (y:ys)) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
                                                                         where p = Player k l ys
 
 endGame :: GameState -> GameState
@@ -100,17 +100,26 @@ spawnPowerup :: GameState -> GameState
 spawnPowerup = undefined
 
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
-spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) t s sc) | i > 5 = g{infoToShow = InfoToShow b p (randomEnemy : e) h}
+spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k n m sg) | i > 5 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k n m (snd (randomEnemy g))
                                                                 | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
 
-randomEnemy :: Enemy
-randomEnemy = undefined
+makeRandomCoordinate :: StdGen -> Float -> Float -> (Float, StdGen)
+makeRandomCoordinate g0 x y = (a, g1)
+    where
+      (a,g1) =  randomR (x,y :: Float) g0
+
+randomEnemy :: GameState-> (Enemy, StdGen)
+randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | (fst f) < 5  = (SpaceShip (Point p) (Vector (fst p - x, snd p - y)), snd f)
+                                                                                | otherwise = (Rock (Point p) (Vector(fst p - x, snd p - y)), snd f)
+                                                                                    where f = makeRandomCoordinate sg 0 100
+                                                                                          p = (fst f, 350)
+
 
 randomPowerup :: Powerup
 randomPowerup = undefined
 
 shootBulletEs :: GameState -> GameState
-shootBulletEs g@(GameState i t s sc) = g{infoToShow = shootBulletE 0 [] i}
+shootBulletEs g@(GameState i _ _ _ _) = g{infoToShow = shootBulletE 0 [] i}
 
 --doet nog niets met random
 shootBulletE :: Float -> [Enemy] -> InfoToShow -> InfoToShow
@@ -127,17 +136,17 @@ hittWall (SpaceShip p (Vector(dx, dy))) = SpaceShip p (Vector (dx, -dy))
 hittWall rock = destroyEnemy rock
 
 inputKey :: Event -> GameState -> GameState
-inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Running sc)
+inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Running sc _)
   = gstate{state = Paused}
-inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Paused sc)
+inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Paused sc _)
   = gstate{state = Running}
-inputKey (EventKey (Char c) Down _  _) gstate@(GameState i e Running sc)
+inputKey (EventKey (Char c) Down _  _) gstate@(GameState i e Running sc _)
   = -- If the user presses a character key, show that one
   gstate { infoToShow = handleInput c i }
-inputKey (EventKey (SpecialKey k) Down _ _) gstate@(GameState i e Running sc)
+inputKey (EventKey (SpecialKey k) Down _ _) gstate@(GameState i e Running sc _)
   = gstate {infoToShow = handleInputSpecial k i}
 
-inputKey _ gstate@(GameState i e Paused sc) = gstate
+inputKey _ gstate@(GameState i e Paused sc _) = gstate
 inputKey _ gstate = gstate -- Otherwise keep the same
 
 {-Dit is een functie die inputs handled, alleen moet er nog gefixt worden dat ingedrukt houden 

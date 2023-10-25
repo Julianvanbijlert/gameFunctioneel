@@ -1,4 +1,5 @@
 module Model where
+import System.Random
   -- | This module contains the data types
   --   which represent the state of the game
 newtype Point = Point (Float, Float)
@@ -41,6 +42,7 @@ data GameState = GameState {
                  , elapsedTime :: Float
                  , state :: State
                  , score :: Int
+                 , rndGen :: StdGen
                  }
 
 
@@ -58,4 +60,4 @@ startEnemies = [SpaceShip (Point(100, 100)) (Vector(-1,3))    ,
                 Rock      (Point(200, 200)) (Vector(-2, -1)) ]
 
 initialState :: GameState
-initialState = GameState (InfoToShow borders initialPlayer startEnemies [])  0 Running 0
+initialState = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 (mkStdGen 137) --nog een random stdgen nodig

@@ -10,7 +10,7 @@ view :: GameState -> IO Picture
 view = return . viewPure
 
 viewPure :: GameState -> Picture
-viewPure gstate@(GameState i t s sc) = case infoToShow gstate of
+viewPure gstate@(GameState i t s sc _) = case infoToShow gstate of
   ShowNothing   -> blank
   InfoToShow b p xs bs -> Pictures [showBorder b, showPlayer p, showListEnemies xs, showBullets bs, showScore sc, showLives p]
   ShowANumber n -> color green (text (show n))

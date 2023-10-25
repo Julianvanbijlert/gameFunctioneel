@@ -7,6 +7,7 @@ import View
 import Graphics.Gloss.Interface.IO.Game
 
 import Graphics.Gloss
+import System.Random
 
 
 {- 
@@ -34,7 +35,8 @@ A function to step the world one iteration. It is passed the period of time (in 
 -> IO ()
 -}
 main :: IO ()
-main = playIO window -- Or FullScreen
+main = do
+    playIO window -- Or FullScreen
               backgroundColor  -- Background color
               fps              -- Frames per second
               initialState     -- Initial state
@@ -61,7 +63,6 @@ sw :: Int
 sw = screenWidth `div` 2
 sh :: Int
 sh = screenHeight `div` 2
-
 
 
 
