@@ -60,4 +60,4 @@ startEnemies = [SpaceShip (Point(100, 100)) (Vector(-1,3))    ,
                 Rock      (Point(200, 200)) (Vector(-2, -1)) ]
 
 initialState :: GameState
-initialState = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 (mkStdGen 137) --nog een random stdgen nodig
+initialState = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 (mkStdGen 144) --nog een random stdgen nodig

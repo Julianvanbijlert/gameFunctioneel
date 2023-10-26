@@ -123,7 +123,7 @@ normalize (Vector (x,y))= Vector (x / p, y / p)
           where p = sqrt (x*x + y*y)
 
 randomEnemy :: GameState-> (Enemy, StdGen)
-randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | (fst g) > 5  = (SpaceShip (Point p) (v), snd g)
+randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | (fst g) >= 5  = (SpaceShip (Point p) (v), snd g)
                                                                                 | otherwise = (Rock (Point p) (v), snd g)
                                                                                     where f = makeRandomCoordinate sg (-350) 350
                                                                                           g = makeRandomCoordinate (snd f) 0 10
