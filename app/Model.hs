@@ -54,7 +54,9 @@ borders :: Border
 borders = Border 340 (-340) --top y bottom y
 
 startEnemies :: [Enemy]
-startEnemies = [
+startEnemies = [SpaceShip (Point(100, 100)) (Vector(-1,3))  [Heart, Heart, Heart]  ,
+                SpaceShip (Point(10, 10))   (Vector(-1,0))  [Heart, Heart, Heart]  ,
+                SpaceShip (Point(10, 100))  (Vector(-1,-1)) [Heart, Heart, Heart]   ,
                 Rock      (Point(200, 200)) (Vector(-2, -1)) [Heart] ]
 
 initialState :: GameState
