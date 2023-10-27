@@ -148,8 +148,9 @@ spawnPowerup :: GameState -> GameState
 spawnPowerup = undefined
 
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
-spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k n m sg) | i > 99 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k n m (snd (randomEnemy g))
+spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m sg) | i > 99 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m (snd (randomEnemy g))
                                                                 | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
+spawnEnemyOrPowerUp i g = g
 
 makeRandomCoordinate :: StdGen -> Float -> Float -> (Float, StdGen)
 makeRandomCoordinate g0 x y = (a, g1)
