@@ -11,20 +11,20 @@ data Enemy =  SpaceShip    Point Vector [Heart]| --can also shoot
 
 data Bullet = EnemyBullet  Point Vector |
               PlayerBullet Point Vector
-              
+
 data Heart =  Heart |
               Shield
 
 data Border = Border Float Float --top y, bottom y
 
-data Powerup = FastShot | DoubleBullet | Extralife 
+data Powerup = FastShot | DoubleBullet | Extralife
 
 
 data State = Running | Paused | GameOver
 data Game = Game {}
 
-data InfoToShow = InfoToShow{border :: Border, player :: Player, enemies :: [Enemy], bullets :: [Bullet]} 
-  
+data InfoToShow = InfoToShow{border :: Border, player :: Player, enemies :: [Enemy], bullets :: [Bullet]}
+
                 | ShowNothing
                 | ShowANumber Int
                 | ShowAChar   Char
@@ -48,16 +48,13 @@ data GameState = GameState {
 
 
 initialPlayer :: Player
-initialPlayer = Player (Point(-300, 0)) (Vector(0, 10)) [Heart, Heart, Heart, Shield]
+initialPlayer = Player (Point (-300, 0)) (Vector (0, 10)) [Heart, Heart, Heart, Shield]
 
 borders :: Border
 borders = Border 340 (-340) --top y bottom y
 
 startEnemies :: [Enemy]
-startEnemies = [SpaceShip (Point(100, 100)) (Vector(-1,3))  [Heart, Heart, Heart]  ,
-                SpaceShip (Point(10, 10))   (Vector(-1,0))  [Heart, Heart, Heart]  ,
-                SpaceShip (Point(10, 100))  (Vector(-1,-1)) [Heart, Heart, Heart]   ,
-                Rock      (Point(200, 200)) (Vector(-2, -1)) [Heart] ]
+startEnemies = [ ]
 
-initialState :: GameState
-initialState = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 (mkStdGen 144) --nog een random stdgen nodig
+initialState :: StdGen -> GameState
+initialState = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 --nog een random stdgen nodig

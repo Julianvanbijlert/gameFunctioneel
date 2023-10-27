@@ -36,10 +36,11 @@ A function to step the world one iteration. It is passed the period of time (in 
 -}
 main :: IO ()
 main = do
+    x <- newStdGen
     playIO window -- Or FullScreen
               backgroundColor  -- Background color
               fps              -- Frames per second
-              initialState     -- Initial state
+              (initialState x)    -- Initial state
               view             -- View function
               input            -- Event function
               step             -- Step function
