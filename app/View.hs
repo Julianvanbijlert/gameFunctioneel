@@ -25,8 +25,8 @@ showListEnemies [] = blank
 showListEnemies (x: xs) = Pictures[showEnemy x, showListEnemies xs]
 
 showEnemy :: Enemy -> Picture
-showEnemy  (Rock (Point(x, y)) _ ) = color white (Polygon [(x, y+20), (x+17, y+10), (x+17, y-10), (x, y-20), (x-17, y-10), (x-17, y+10)])
-showEnemy  (SpaceShip (Point (x, y)) _ ) = color red (Polygon [(x-10, y-10),(x+10, y+10), (x-10, y+10), (x+10, y-10)]) --square
+showEnemy  (Rock (Point(x, y)) _ _) = color white (Polygon [(x, y+20), (x+17, y+10), (x+17, y-10), (x, y-20), (x-17, y-10), (x-17, y+10)])
+showEnemy  (SpaceShip (Point (x, y)) _ _) = color red (Polygon [(x-10, y-10),(x+10, y+10), (x-10, y+10), (x+10, y-10)]) --square
 
 showBullets :: [Bullet] -> Picture
 showBullets [] = blank

@@ -14,7 +14,7 @@ import Model
       Enemy(..),
       Player(..),
       InfoToShow(InfoToShow, enemies),
-      GameState(GameState, elapsedTime, score, state, infoToShow) )
+      GameState(GameState, elapsedTime, score, state, infoToShow), Heart (Heart) )
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
@@ -33,8 +33,8 @@ step secs gstate@(GameState i h s sc sg)
       return . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
   where
     j = makeRandomCoordinate sg 0 100
-  
-     
+
+
 
 checkState :: GameState -> GameState
 checkState gstate@(GameState i _ Running sc _) = collideFunction . shootBulletEs . moveEverything $ gstate {score = sc + 1 }
@@ -42,26 +42,39 @@ checkState gstate@(GameState i t Paused sc _) = gstate
 checkState gstate@(GameState i t GameOver sc _) = gstate
 
 collideFunction :: GameState -> GameState
-collideFunction gstate@(GameState(InfoToShow _ p xs bs) _ _ sc _) =
-    if checkIfCollided p xs || checkIfCollided p bs
-         then (.) checkDead removeHeart gstate{score = sc - 10}
-         else gstate
+collideFunction gstate@(GameState(InfoToShow o p e b) _ _ _ _) =
+   checkDead gstate{infoToShow = InfoToShow o p2 e3 b2}
+    where (p1, e1) = collideFunctionPlayer p e
+          (p2, b1) = collideFunctionPlayer p1 b
+          (e2, b2) = collideFunctionEnemy e1 b1
+          e3 = removeEnemies e2
+
+
+collideFunctionPlayer :: (Collides s a, Remove s) => s -> [a] -> (s, [a])
+collideFunctionPlayer p [] = (p, [])
+collideFunctionPlayer p (x:xs) | collides p x = collideFunctionPlayer (removeHeart p) xs
+                               | otherwise = let (q, ys) = collideFunctionPlayer p xs in (q, x:ys)
+
+collideFunctionEnemy :: (Collides s a, Remove s) => [s] -> [a] -> ([s], [a])
+collideFunctionEnemy e [] = (e, [])
+collideFunctionEnemy [] b = ([], b)
+collideFunctionEnemy (e:es) b = let (ys, zs) = collideFunctionEnemy es b1 in (e1:ys, zs)
+      where (e1, b1) = collideFunctionPlayer e b
+
 
 moveEverything :: GameState -> GameState
 moveEverything (GameState (InfoToShow b p xs bs) t state sc sg) = GameState (InfoToShow b p enem bul) t state sc sg
                                                                 where enem = moveAllEnemies xs
                                                                       bul  = moveAllBullets bs
 checkDead :: GameState -> GameState
-checkDead gstate@(GameState i _ Running _ _)  | isDead i = gstate{state = GameOver}
-                                             | otherwise = gstate
-isDead :: InfoToShow -> Bool
-isDead (InfoToShow b (Player k l []) xs bs) = True
-isDead (InfoToShow b (Player k l xz) xs bs) = False
+checkDead gstate@(GameState (InfoToShow _ p _ _) _ Running _ _)  | isDead p = gstate{state = GameOver}
+                                                                | otherwise = gstate
+
 
 moveAllEnemies :: [Enemy] -> [Enemy]
 moveAllEnemies [] =  []
-moveAllEnemies (e@(SpaceShip (Point(x, y)) (Vector(dx, dy))) : xs) =  SpaceShip (Point (x + dx, y + dy )) (Vector (dx, dy)) : moveAllEnemies xs
-moveAllEnemies (e@(Rock (Point(x, y)) (Vector(dx, dy))) : xs) =  Rock (Point (x + dx, y + dy )) (Vector (dx, dy)) : moveAllEnemies xs
+moveAllEnemies (e@(SpaceShip (Point(x, y)) (Vector(dx, dy)) h) : xs) =  SpaceShip (Point (x + dx, y + dy )) (Vector (dx, dy)) h : moveAllEnemies xs
+moveAllEnemies (e@(Rock (Point(x, y)) (Vector(dx, dy)) h) : xs) =  Rock (Point (x + dx, y + dy )) (Vector (dx, dy)) h : moveAllEnemies xs
 
 moveAllBullets :: [Bullet] -> [Bullet]
 moveAllBullets [] = []
@@ -77,8 +90,8 @@ class Collides s a where
   checkIfCollided :: s -> [a] -> Bool
 instance Collides Enemy Bullet where
   collides e (EnemyBullet _ _) = False
-  collides (Rock (Point(x, y)) _ ) (PlayerBullet (Point(a,b)) _)= a>=x-17 &&a<=x+17&& b>=y-20 &&b>=y+20 -- | hardcoded en vierkant collision
-  collides  (SpaceShip (Point (x, y)) _ ) (PlayerBullet (Point(a,b)) _) = a>=x-10 && a<=x+10 && b<=y-10 && b>= y+10 --hardcoded
+  collides (Rock (Point(x, y)) _ _) (PlayerBullet (Point(a,b)) _)= a>=x-17 &&a<=x+17&& b>=y-20 &&b<=y+20 -- | hardcoded en vierkant collision
+  collides  (SpaceShip (Point (x, y)) _ _) (PlayerBullet (Point(a,b)) _) = a>=x-10 && a<=x+10 && b>=y-10 && b<= y+10 --hardcoded
   checkIfCollided e = any (collides e)
 instance Collides Player Bullet where
   collides p (PlayerBullet _ _) = False
@@ -89,16 +102,41 @@ instance Collides Player Enemy where
   checkIfCollided p = any (collides p)
 
 
-destroyEnemy :: Enemy -> Enemy --redo
-destroyEnemy = undefined
+class Remove p where
+  removeHeart :: p -> p
+  isDead :: p -> Bool
+instance Remove Player where
+  -- removeHeart (Player p v []) = Player p v []
+  removeHeart (Player p v [x]) = Player p v []
+  removeHeart (Player p v (x:xs)) = Player p v xs
+  isDead (Player p v []) = True
+  isDead (Player p v a) = False
+instance Remove Enemy where
+  -- -- removeHeart (Rock p v []) = Rock p v []
+  -- removeHeart (SpaceShip p v []) = SpaceShip p v []
+  removeHeart (Rock p v [x]) = Rock p v []
+  removeHeart (SpaceShip p v [x]) = SpaceShip p v []
+  removeHeart (Rock p v (x:xs)) = Rock p v xs
+  removeHeart (SpaceShip p v (x:xs)) = SpaceShip p v xs
+  isDead (Rock p v []) = True
+  isDead (SpaceShip p v []) = True
+  isDead (Rock p v a) = False
+  isDead (SpaceShip p v a) = False
 
-removeHeart :: GameState -> GameState
-removeHeart (GameState (InfoToShow b (Player k l []) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
-                                                                        where p = Player k l []
-removeHeart (GameState (InfoToShow b (Player k l [x]) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
-                                                                        where p = Player k l []
-removeHeart (GameState (InfoToShow b (Player k l (y:ys)) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
-                                                                        where p = Player k l ys
+
+destroyEnemy :: Enemy -> Enemy --redo
+destroyEnemy (Rock p v x) = Rock p v []
+destroyEnemy (SpaceShip p v x) = SpaceShip p v []
+
+removeEnemies :: [Enemy] -> [Enemy]
+removeEnemies = filter (not.isDead)
+-- removeHeart :: GameState -> GameState
+-- removeHeart (GameState (InfoToShow b (Player k l []) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
+--                                                                         where p = Player k l []
+-- removeHeart (GameState (InfoToShow b (Player k l [x]) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
+--                                                                         where p = Player k l []
+-- removeHeart (GameState (InfoToShow b (Player k l (y:ys)) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
+--                                                                         where p = Player k l ys
 
 endGame :: GameState -> GameState
 endGame = undefined
@@ -123,12 +161,12 @@ normalize (Vector (x,y))= Vector (x / p, y / p)
           where p = sqrt (x*x + y*y)
 
 randomEnemy :: GameState-> (Enemy, StdGen)
-randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | (fst g) >= 5  = (SpaceShip (Point p) (v), snd g)
-                                                                                | otherwise = (Rock (Point p) (v), snd g)
+randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | (fst g) >= 5  = (SpaceShip (Point p) (v) [Heart, Heart, Heart], snd g)
+                                                                                | otherwise = (Rock (Point p) (v) [Heart], snd g)
                                                                                     where f = makeRandomCoordinate sg (-350) 350
                                                                                           g = makeRandomCoordinate (snd f) 0 10
                                                                                           p = (350,(fst f))
-                                                                                          v = normalize(Vector (x- fst p , y-snd p ))
+                                                                                          v = normalize (Vector (x- fst p , y-snd p ))
 
 
 randomPowerup :: Powerup
@@ -139,16 +177,16 @@ shootBulletEs g@(GameState i _ _ _ _) = g{infoToShow = shootBulletE 0 [] i}
 
 --doet nog niets met random
 shootBulletE :: Float -> [Enemy] -> InfoToShow -> InfoToShow
-shootBulletE random le (InfoToShow b (Player (Point(x,y)) v h) (e@(Rock p vec): es) bul)  =
+shootBulletE random le (InfoToShow b (Player (Point(x,y)) v h) (e@(Rock p vec l): es) bul)  =
       shootBulletE random (e: le) (InfoToShow b (Player (Point (x,y)) v h) es bul)
-shootBulletE random le (InfoToShow b (Player (Point(x,y)) v h) (e@(SpaceShip (Point(xt, yt)) vec): es) bul) =
+shootBulletE random le (InfoToShow b (Player (Point(x,y)) v h) (e@(SpaceShip (Point(xt, yt)) vec l): es) bul) =
       shootBulletE random (e : le) (InfoToShow b (Player (Point (x,y)) v h) es (EnemyBullet (Point (xt - 20, yt) ) (Vector (-10, 0)) : bul))
 shootBulletE random le i@(InfoToShow b (Player (Point(x,y)) v _) [] bul) = i{enemies = le}
 
 
 --if spaceship hits a wall it will go back in the screen, if rock does this it breaks
 hittWall :: Enemy -> Enemy
-hittWall (SpaceShip p (Vector(dx, dy))) = SpaceShip p (Vector (dx, -dy))
+hittWall (SpaceShip p (Vector(dx, dy)) h) = SpaceShip p (Vector (dx, -dy)) h
 hittWall rock = destroyEnemy rock
 
 inputKey :: Event -> GameState -> GameState
