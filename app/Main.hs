@@ -1,11 +1,10 @@
 module Main where
 
 import Controller
-import Model
+import Model (initialState, screenh, screenw )
 import View
-
 import Graphics.Gloss.Interface.IO.Game
-
+    ( black, Display(InWindow), Color, playIO )
 import Graphics.Gloss
 import System.Random
 
@@ -46,23 +45,15 @@ main = do
 -- main = play window backgroundColor fps initialGame gameAsPicture transformGame (\\_ ->id)
 
 window :: Display
-window = InWindow "Shoot m up" (screenWidth, screenHeight) (10, 10)
+window = InWindow "Shoot m up" (round Model.screenw * 2, round Model.screenh * 2) (10, 10)
 
 backgroundColor :: Color
 backgroundColor = black
 
 fps :: Int
-fps = 30
+fps = 100
 
-screenWidth :: Int 
-screenWidth = 700
-screenHeight :: Int 
-screenHeight = 700
 
-sw :: Int
-sw = screenWidth `div` 2
-sh :: Int
-sh = screenHeight `div` 2
 
 
 

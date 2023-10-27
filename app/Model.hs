@@ -35,7 +35,9 @@ data InfoToShow = InfoToShow{border :: Border, player :: Player, enemies :: [Ene
 
 
 numberOfSecsBetweenActions :: Float
-numberOfSecsBetweenActions = 0.0002
+numberOfSecsBetweenActions = 0.3
+
+
 
 data GameState = GameState {
                    infoToShow  :: InfoToShow
@@ -45,16 +47,26 @@ data GameState = GameState {
                  , rndGen :: StdGen
                  }
 
+screenWidths :: Float
+screenWidths = 700
 
+screenHeights :: Float
+screenHeights = 400
+
+screenw :: Float
+screenw = screenWidths / 2
+
+screenh :: Float
+screenh = screenHeights / 2
 
 initialPlayer :: Player
-initialPlayer = Player (Point(-300, 0)) (Vector(0, 10)) [Heart, Heart, Heart, Shield]
+initialPlayer = Player (Point(-300, 0)) (Vector(10, 10)) [Shield, Heart, Heart, Heart]
 
 borders :: Border
-borders = Border 340 (-340) --top y bottom y
+borders = Border (screenh - 10) (-screenh + 10) --top y bottom y
 
 startEnemies :: [Enemy]
-startEnemies = [
+startEnemies = [SpaceShip (Point(200, 300)) (Vector(-2, -1)) [Heart],
                 Rock      (Point(200, 200)) (Vector(-2, -1)) [Heart] ]
 
 initialState :: GameState

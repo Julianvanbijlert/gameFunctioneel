@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Controller where
   -- | This module defines how the state changes
@@ -14,7 +15,7 @@ import Model
       Enemy(..),
       Player(..),
       InfoToShow(InfoToShow, enemies),
-      GameState(GameState, elapsedTime, score, state, infoToShow), Heart (Heart) )
+      GameState(GameState, elapsedTime, score, state, infoToShow), Heart (Heart), screenw, screenh )
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
@@ -28,7 +29,7 @@ import Graphics.Gloss.Data.Color
 step :: Float -> GameState -> IO GameState
 step secs gstate@(GameState i h s sc sg)
     | elapsedTime gstate + secs > numberOfSecsBetweenActions = --nog random toevoegen
-      return . spawnEnemyOrPowerUp (fst j) . checkState $ (GameState i h s sc (snd j)){ elapsedTime = 0}
+      return . spawnEnemyOrPowerUp (fst j) .  shootBulletEs . checkState $ (GameState i h s sc (snd j)){ elapsedTime = 0}
     | otherwise = -- Just update the elapsed time
       return . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
   where
@@ -37,7 +38,7 @@ step secs gstate@(GameState i h s sc sg)
 
 
 checkState :: GameState -> GameState
-checkState gstate@(GameState i _ Running sc _) = collideFunction . shootBulletEs . moveEverything $ gstate {score = sc + 1 }
+checkState gstate@(GameState i _ Running sc _) = collideFunction . moveEverything $ gstate {score = sc + 1 }
 checkState gstate@(GameState i t Paused sc _) = gstate
 checkState gstate@(GameState i t GameOver sc _) = gstate
 
@@ -106,18 +107,24 @@ class Remove p where
   removeHeart :: p -> p
   isDead :: p -> Bool
 instance Remove Player where
-  -- removeHeart (Player p v []) = Player p v []
+  removeHeart :: Player -> Player
+  removeHeart (Player p v []) = Player p v []
   removeHeart (Player p v [x]) = Player p v []
   removeHeart (Player p v (x:xs)) = Player p v xs
+  
+  isDead :: Player -> Bool
   isDead (Player p v []) = True
   isDead (Player p v a) = False
 instance Remove Enemy where
-  -- -- removeHeart (Rock p v []) = Rock p v []
-  -- removeHeart (SpaceShip p v []) = SpaceShip p v []
+  removeHeart :: Enemy -> Enemy
+  removeHeart (Rock p v []) = Rock p v []
+  removeHeart (SpaceShip p v []) = SpaceShip p v []
   removeHeart (Rock p v [x]) = Rock p v []
   removeHeart (SpaceShip p v [x]) = SpaceShip p v []
   removeHeart (Rock p v (x:xs)) = Rock p v xs
   removeHeart (SpaceShip p v (x:xs)) = SpaceShip p v xs
+
+  isDead :: Enemy -> Bool
   isDead (Rock p v []) = True
   isDead (SpaceShip p v []) = True
   isDead (Rock p v a) = False
@@ -148,8 +155,9 @@ spawnPowerup :: GameState -> GameState
 spawnPowerup = undefined
 
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
-spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k n m sg) | i > 99 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k n m (snd (randomEnemy g))
-                                                                | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
+spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m sg) | i > 75 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m (snd (randomEnemy g))
+                                                                        | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
+spawnEnemyOrPowerUp i g@(GameState it k s m sg)= g
 
 makeRandomCoordinate :: StdGen -> Float -> Float -> (Float, StdGen)
 makeRandomCoordinate g0 x y = (a, g1)
@@ -161,11 +169,11 @@ normalize (Vector (x,y))= Vector (x / p, y / p)
           where p = sqrt (x*x + y*y)
 
 randomEnemy :: GameState-> (Enemy, StdGen)
-randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | (fst g) >= 5  = (SpaceShip (Point p) (v) [Heart, Heart, Heart], snd g)
-                                                                                | otherwise = (Rock (Point p) (v) [Heart], snd g)
-                                                                                    where f = makeRandomCoordinate sg (-350) 350
+randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | fst g >= 5  = (SpaceShip (Point p) v [Heart] , snd g)
+                                                                                | otherwise = (Rock (Point p) v [Heart, Heart, Heart, Heart], snd g)
+                                                                                    where f = makeRandomCoordinate sg (-screenh + 10) (screenh - 10)
                                                                                           g = makeRandomCoordinate (snd f) 0 10
-                                                                                          p = (350,(fst f))
+                                                                                          p = (screenw ,fst f)
                                                                                           v = normalize (Vector (x- fst p , y-snd p ))
 
 
@@ -208,11 +216,15 @@ meerdere interacties doet en dat het niet dubbel aangeroepen is als het omhoog g
 handleInput :: Char -> InfoToShow -> InfoToShow
 handleInput 'w' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x, y + dy)) (Vector (dx, dy)) h) e bul
 handleInput 's' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x, y - dy)) (Vector (dx, dy)) h) e bul
+handleInput 'a' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x - dx, y)) (Vector (dx, dy)) h) e bul
+handleInput 'd' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x + dx, y)) (Vector (dx, dy)) h) e bul
 handleInput 'f' (InfoToShow b p@(Player (Point(x, y)) _ _) e bul) = InfoToShow b p e (PlayerBullet (Point (x + 40, y)) (Vector (5, 0)) : bul)
 handleInput _ i = i
 
 handleInputSpecial :: SpecialKey -> InfoToShow -> InfoToShow
 handleInputSpecial KeyUp    (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x, y + dy)) (Vector (dx, dy)) h) e bul
 handleInputSpecial KeyDown  (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x, y - dy)) (Vector (dx, dy)) h) e bul
+handleInputSpecial KeyLeft (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x - dx, y)) (Vector (dx, dy)) h) e bul
+handleInputSpecial KeyRight (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x + dx, y)) (Vector (dx, dy)) h) e bul
 handleInputSpecial KeySpace (InfoToShow b p@(Player (Point(x, y)) _ _) e bul) = InfoToShow b p e (PlayerBullet (Point (x + 40, y)) (Vector (5, 0)) : bul)
 handleInputSpecial _ i = i

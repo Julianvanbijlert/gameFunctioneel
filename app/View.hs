@@ -4,6 +4,17 @@ module View where
 
 import Graphics.Gloss
 import Model
+    ( Heart(..),
+      Point(..),
+      Border(..),
+      Bullet(..),
+      Enemy(..),
+      Player(..),
+      State(..),
+      InfoToShow(ShowAChar, ShowNothing, InfoToShow, ShowANumber),
+      GameState(GameState, infoToShow),
+      screenw,
+      screenh )
 
 
 view :: GameState -> IO Picture
@@ -33,20 +44,20 @@ showBullets [] = blank
 showBullets (x: xs) = Pictures[showBullet x, showBullets xs]
 
 showBullet :: Bullet -> Picture
-showBullet (EnemyBullet (Point(x, y)) _) = color red (Polygon[(x - 2, y -1),(x + 2, y - 1), (x + 2, y + 1), (x - 2, y + 1)])
+showBullet (EnemyBullet (Point(x, y)) _) = color yellow (Polygon[(x - 2, y -1),(x + 2, y - 1), (x + 2, y + 1), (x - 2, y + 1)])
 showBullet (PlayerBullet (Point(x, y)) _) = color white (Polygon[(x - 2, y -1),(x + 2, y - 1), (x + 2, y + 1), (x - 2, y + 1)])
 
 showBorder :: Border -> Picture
 showBorder (Border ytop ybot) = pictures[ color green (Polygon [(sw, sh), (sw, ytop), (-sw , ytop), (-sw, sh) ]),
                                           color green (Polygon [(sw, -sh), (sw, ybot), (-sw , ybot), (-sw, -sh) ]) ]
-                                            where sw = 350  --helft van screenwidth
-                                                  sh = 350  --helft van screenheight
+                                            where sw = Model.screenw  --helft van screenwidth
+                                                  sh = Model.screenh  --helft van screenheight
 showScore :: Int -> Picture
-showScore i = color white (Translate (-50) 300 (Scale 0.3 0.3 (text (show i))))
+showScore i = color white (Translate (-50) (Model.screenh - 50) (Scale 0.3 0.3 (text (show i))))
 
 --we made this player instead of putting it in the game in case we wanted to add multiplayer
 showLives :: Player -> Picture
-showLives (Player (Point(x, y)) _ h) = showLive (Point(0, 0)) h
+showLives (Player (Point(x, y)) _ h) = showLive (Point(0, 0)) (reverse h)
 
 showLive :: Model.Point -> [Heart] -> Picture
 showLive _ [] = blank
@@ -54,7 +65,7 @@ showLive p@(Point (x, y)) (Heart : xs) = Pictures[drawHeart p, showLive (Point(x
 showLive p@(Point (x, y)) (Shield : xs) = Pictures[drawShield p, showLive (Point(x + 50, y)) xs]
 
 drawHeart :: Model.Point -> Picture
-drawHeart (Point (x, y)) = Translate (-300 + x) (300 + y) heart
+drawHeart (Point (x, y)) = Translate (-Model.screenw + 50 + x) (Model.screenh - 50 + y) heart
   --color white (Translate (-100) 300 (Scale 0.3 0.3 (text (show (length p)))))
 
 --https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.vecteezy.com%2Fpng%2F12658366-heart-shaped-love-icon-symbol-for-pictogram-app-website-logo-or-graphic-design-element-pixel-art-style-illustration-format-png&psig=AOvVaw3I1hrWNnEue6ymB1XQF6uH&ust=1698229669669000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCdnNS8joIDFQAAAAAdAAAAABAE
@@ -62,7 +73,7 @@ heart :: Picture
 heart = color white (Scale 0.2 0.2 (text (show "<3")))
 
 drawShield :: Model.Point -> Picture
-drawShield (Point (x, y)) = Translate (-300 + x) (300 + y) shield
+drawShield (Point (x, y)) = Translate (-Model.screenw + 50 + x) (Model.screenh - 50 + y) shield
 
 --Dall-e
 shield :: Picture
