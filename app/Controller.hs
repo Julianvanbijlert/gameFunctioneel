@@ -1,9 +1,4 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-<<<<<<< HEAD
-{-# LANGUAGE InstanceSigs #-}
-
-=======
->>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
 module Controller where
   -- | This module defines how the state changes
   --   in response to time and user input
@@ -18,11 +13,9 @@ import Model
       Enemy(..),
       Player(..),
       InfoToShow(InfoToShow, enemies),
-<<<<<<< HEAD
-      GameState(GameState, elapsedTime, score, state, infoToShow), Heart (Heart), screenw, screenh )
-=======
-      GameState(GameState, elapsedTime, score, state, infoToShow), Heart (Heart), Border (Border) )
->>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
+      GameState(GameState, elapsedTime, score, state, infoToShow), Heart (Heart),Border (Border), screenw, screenh )
+
+
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
@@ -130,12 +123,10 @@ instance Remove Player where
   isDead (Player p v a) = False
   destroy (Player p v x) = Player p v []
 instance Remove Enemy where
-<<<<<<< HEAD
   removeHeart :: Enemy -> Enemy
   removeHeart (Rock p v []) = Rock p v []
   removeHeart (SpaceShip p v []) = SpaceShip p v []
-=======
->>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
+
   removeHeart (Rock p v [x]) = Rock p v []
   removeHeart (SpaceShip p v [x]) = SpaceShip p v []
   removeHeart (Rock p v (x:xs)) = Rock p v xs
@@ -163,15 +154,10 @@ spawnPowerup :: GameState -> GameState
 spawnPowerup = undefined
 
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
-<<<<<<< HEAD
 spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m sg) | i > 75 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m (snd (randomEnemy g))
                                                                         | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
 spawnEnemyOrPowerUp i g@(GameState it k s m sg)= g
-=======
-spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m sg) | i > 99 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m (snd (randomEnemy g))
-                                                                | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
-spawnEnemyOrPowerUp i g = g
->>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
+
 
 makeRandomCoordinate :: StdGen -> Float -> Float -> (Float, StdGen)
 makeRandomCoordinate g0 x y = (a, g1)
@@ -183,21 +169,13 @@ normalize (Vector (x,y))= Vector (x / p, y / p)
           where p = sqrt (x*x + y*y)
 
 randomEnemy :: GameState-> (Enemy, StdGen)
-<<<<<<< HEAD
-randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | fst g >= 5  = (SpaceShip (Point p) v [Heart] , snd g)
-                                                                                | otherwise = (Rock (Point p) v [Heart, Heart, Heart, Heart], snd g)
-                                                                                    where f = makeRandomCoordinate sg (-screenh + 10) (screenh - 10)
-                                                                                          g = makeRandomCoordinate (snd f) 0 10
-                                                                                          p = (screenw ,fst f)
-                                                                                          v = normalize (Vector (x- fst p , y-snd p ))
-=======
 randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | i >= 5  = (SpaceShip (Point p) v [Heart, Heart, Heart], s1)
                                                                                 | otherwise = (Rock (Point p) v [Heart], s1)
-                                                                                    where (y1, s) = makeRandomCoordinate sg (-350) 350
+                                                                                    where (y1, s) = makeRandomCoordinate sg (-screenh + 10) (screenh - 10)
                                                                                           (i, s1) = makeRandomCoordinate s 0 10
-                                                                                          p@(a,b) = (350,y1)
+                                                                                          p@(a,b) = (screenw,y1)
                                                                                           v = normalize (Vector (x- a , y-b))
->>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
+
 
 
 randomPowerup :: Powerup
