@@ -1,6 +1,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+<<<<<<< HEAD
 {-# LANGUAGE InstanceSigs #-}
 
+=======
+>>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
 module Controller where
   -- | This module defines how the state changes
   --   in response to time and user input
@@ -15,7 +18,11 @@ import Model
       Enemy(..),
       Player(..),
       InfoToShow(InfoToShow, enemies),
+<<<<<<< HEAD
       GameState(GameState, elapsedTime, score, state, infoToShow), Heart (Heart), screenw, screenh )
+=======
+      GameState(GameState, elapsedTime, score, state, infoToShow), Heart (Heart), Border (Border) )
+>>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
@@ -45,10 +52,12 @@ checkState gstate@(GameState i t GameOver sc _) = gstate
 collideFunction :: GameState -> GameState
 collideFunction gstate@(GameState(InfoToShow o p e b) _ _ _ _) =
    checkDead gstate{infoToShow = InfoToShow o p2 e3 b2}
-    where (p1, e1) = collideFunctionPlayer p e
+    where p0 = collideFunctionBoard p o
+          (p1, e1) = collideFunctionPlayer p0 e
           (p2, b1) = collideFunctionPlayer p1 b
           (e2, b2) = collideFunctionEnemy e1 b1
-          e3 = removeEnemies e2
+          e3 = filter(not.(`collides` o)) e2
+          e4 = removeEnemies e3
 
 
 collideFunctionPlayer :: (Collides s a, Remove s) => s -> [a] -> (s, [a])
@@ -62,6 +71,9 @@ collideFunctionEnemy [] b = ([], b)
 collideFunctionEnemy (e:es) b = let (ys, zs) = collideFunctionEnemy es b1 in (e1:ys, zs)
       where (e1, b1) = collideFunctionPlayer e b
 
+collideFunctionBoard :: (Collides s a, Remove s) => s -> a -> s
+collideFunctionBoard p b | collides p b = destroy p
+                         | otherwise = p
 
 moveEverything :: GameState -> GameState
 moveEverything (GameState (InfoToShow b p xs bs) t state sc sg) = GameState (InfoToShow b p enem bul) t state sc sg
@@ -88,24 +100,25 @@ input e gstate = return (inputKey e gstate)
 
 class Collides s a where
   collides :: s -> a -> Bool
-  checkIfCollided :: s -> [a] -> Bool
 instance Collides Enemy Bullet where
   collides e (EnemyBullet _ _) = False
   collides (Rock (Point(x, y)) _ _) (PlayerBullet (Point(a,b)) _)= a>=x-17 &&a<=x+17&& b>=y-20 &&b<=y+20 -- | hardcoded en vierkant collision
   collides  (SpaceShip (Point (x, y)) _ _) (PlayerBullet (Point(a,b)) _) = a>=x-10 && a<=x+10 && b>=y-10 && b<= y+10 --hardcoded
-  checkIfCollided e = any (collides e)
 instance Collides Player Bullet where
   collides p (PlayerBullet _ _) = False
   collides (Player (Point(x,y)) _ _) (EnemyBullet(Point(a,b)) _) = a>=x && a<=x+30 && b>=y-10 &&b <=y+10 -- | hardcoded en vierkant collision
-  checkIfCollided p = any (collides p)
 instance Collides Player Enemy where
   collides (Player(Point(x,y)) _ _) e= collides e (PlayerBullet (Point (x,y-10)) (Vector (x,x))) || collides e (PlayerBullet (Point (x,y+10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y-10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y+10)) (Vector (x,x)))  -- again het is vierkant...
-  checkIfCollided p = any (collides p)
-
+instance Collides Player Border where
+  collides (Player (Point(x,y)) _ _) (Border a b) = y+10>=a || y-10<=b
+instance Collides Enemy Border where
+  collides (Rock (Point(x, y)) _ _) (Border a b) = x-17>a ||x+17<b|| y+20<b ||y-20>a
+  collides  (SpaceShip (Point (x, y)) _ _) (Border a b) = x-10>a ||x+10<b|| y+10<b ||y-10>a
 
 class Remove p where
   removeHeart :: p -> p
   isDead :: p -> Bool
+  destroy :: p -> p
 instance Remove Player where
   removeHeart :: Player -> Player
   removeHeart (Player p v []) = Player p v []
@@ -115,10 +128,14 @@ instance Remove Player where
   isDead :: Player -> Bool
   isDead (Player p v []) = True
   isDead (Player p v a) = False
+  destroy (Player p v x) = Player p v []
 instance Remove Enemy where
+<<<<<<< HEAD
   removeHeart :: Enemy -> Enemy
   removeHeart (Rock p v []) = Rock p v []
   removeHeart (SpaceShip p v []) = SpaceShip p v []
+=======
+>>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
   removeHeart (Rock p v [x]) = Rock p v []
   removeHeart (SpaceShip p v [x]) = SpaceShip p v []
   removeHeart (Rock p v (x:xs)) = Rock p v xs
@@ -129,21 +146,12 @@ instance Remove Enemy where
   isDead (SpaceShip p v []) = True
   isDead (Rock p v a) = False
   isDead (SpaceShip p v a) = False
+  destroy (Rock p v x) = Rock p v []
+  destroy (SpaceShip p v x) = SpaceShip p v []
 
-
-destroyEnemy :: Enemy -> Enemy --redo
-destroyEnemy (Rock p v x) = Rock p v []
-destroyEnemy (SpaceShip p v x) = SpaceShip p v []
 
 removeEnemies :: [Enemy] -> [Enemy]
 removeEnemies = filter (not.isDead)
--- removeHeart :: GameState -> GameState
--- removeHeart (GameState (InfoToShow b (Player k l []) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
---                                                                         where p = Player k l []
--- removeHeart (GameState (InfoToShow b (Player k l [x]) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
---                                                                         where p = Player k l []
--- removeHeart (GameState (InfoToShow b (Player k l (y:ys)) xs bs) m n o q) = GameState (InfoToShow b p xs bs) m n o q
---                                                                         where p = Player k l ys
 
 endGame :: GameState -> GameState
 endGame = undefined
@@ -155,9 +163,15 @@ spawnPowerup :: GameState -> GameState
 spawnPowerup = undefined
 
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
+<<<<<<< HEAD
 spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m sg) | i > 75 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m (snd (randomEnemy g))
                                                                         | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
 spawnEnemyOrPowerUp i g@(GameState it k s m sg)= g
+=======
+spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m sg) | i > 99 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m (snd (randomEnemy g))
+                                                                | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
+spawnEnemyOrPowerUp i g = g
+>>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
 
 makeRandomCoordinate :: StdGen -> Float -> Float -> (Float, StdGen)
 makeRandomCoordinate g0 x y = (a, g1)
@@ -169,12 +183,21 @@ normalize (Vector (x,y))= Vector (x / p, y / p)
           where p = sqrt (x*x + y*y)
 
 randomEnemy :: GameState-> (Enemy, StdGen)
+<<<<<<< HEAD
 randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | fst g >= 5  = (SpaceShip (Point p) v [Heart] , snd g)
                                                                                 | otherwise = (Rock (Point p) v [Heart, Heart, Heart, Heart], snd g)
                                                                                     where f = makeRandomCoordinate sg (-screenh + 10) (screenh - 10)
                                                                                           g = makeRandomCoordinate (snd f) 0 10
                                                                                           p = (screenw ,fst f)
                                                                                           v = normalize (Vector (x- fst p , y-snd p ))
+=======
+randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | i >= 5  = (SpaceShip (Point p) v [Heart, Heart, Heart], s1)
+                                                                                | otherwise = (Rock (Point p) v [Heart], s1)
+                                                                                    where (y1, s) = makeRandomCoordinate sg (-350) 350
+                                                                                          (i, s1) = makeRandomCoordinate s 0 10
+                                                                                          p@(a,b) = (350,y1)
+                                                                                          v = normalize (Vector (x- a , y-b))
+>>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
 
 
 randomPowerup :: Powerup
@@ -195,7 +218,7 @@ shootBulletE random le i@(InfoToShow b (Player (Point(x,y)) v _) [] bul) = i{ene
 --if spaceship hits a wall it will go back in the screen, if rock does this it breaks
 hittWall :: Enemy -> Enemy
 hittWall (SpaceShip p (Vector(dx, dy)) h) = SpaceShip p (Vector (dx, -dy)) h
-hittWall rock = destroyEnemy rock
+hittWall rock = destroy rock
 
 inputKey :: Event -> GameState -> GameState
 inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Running sc _)
