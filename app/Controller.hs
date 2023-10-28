@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE InstanceSigs #-}
 module Controller where
   -- | This module defines how the state changes
   --   in response to time and user input
@@ -103,10 +104,11 @@ instance Collides Player Bullet where
 instance Collides Player Enemy where
   collides (Player(Point(x,y)) _ _) e= collides e (PlayerBullet (Point (x,y-10)) (Vector (x,x))) || collides e (PlayerBullet (Point (x,y+10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y-10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y+10)) (Vector (x,x)))  -- again het is vierkant...
 instance Collides Player Border where
-  collides (Player (Point(x,y)) _ _) (Border a b) = y+10>=a || y-10<=b
+  collides :: Player -> Border -> Bool
+  collides (Player (Point(x,y)) _ _) (Border a b) = y+10>=a || y-10<=b || x<=(-screenw) || x+30>=screenw
 instance Collides Enemy Border where
-  collides (Rock (Point(x, y)) _ _) (Border a b) = x-17>a ||x+17<b|| y+20<b ||y-20>a
-  collides  (SpaceShip (Point (x, y)) _ _) (Border a b) = x-10>a ||x+10<b|| y+10<b ||y-10>a
+  collides (Rock (Point(x, y)) _ _) (Border a b) = x-17>screenw ||x+17<(-screenw)|| y+20<(-screenh) ||y-20>screenh
+  collides  (SpaceShip (Point (x, y)) _ _) (Border a b) = x-10>screenw ||x+10<(-screenw)|| y+10<(-screenh) ||y-10>screenh
 
 class Remove p where
   removeHeart :: p -> p
@@ -163,7 +165,7 @@ randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  
                                                                                 | otherwise = (Rock (Point p) v [Heart], s1)
                                                                                     where (y1, s) = makeRandomCoordinate sg (-screenh + 10) (screenh - 10)
                                                                                           (i, s1) = makeRandomCoordinate s 0 10
-                                                                                          p@(a,b) = (screenw,y1)
+                                                                                          p@(a,b) = (screenw-10,y1)
                                                                                           v = normalize (Vector (x- a , y-b))
 
 
