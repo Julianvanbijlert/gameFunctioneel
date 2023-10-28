@@ -1,5 +1,4 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE InstanceSigs #-}
 module Controller where
   -- | This module defines how the state changes
   --   in response to time and user input
