@@ -33,7 +33,7 @@ step secs gstate@(GameState i h s sc sg)
     | otherwise = -- Just update the elapsed time
       return . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
   where
-    j = makeRandomCoordinate sg 0 80
+    j = makeRandomCoordinate sg 0 60
 
 
 
@@ -49,7 +49,7 @@ collideFunction gstate@(GameState(InfoToShow o p e b) _ _ _ _) =
           (p1, e1) = collideFunctionPlayer p0 e
           (p2, b1) = collideFunctionPlayer p1 b
           (e2, b2) = collideFunctionEnemy e1 b1
-          e3 = filter(not.(`collides` o)) e2
+          e3 = filter (not.(`collides` o)) e2
           e4 = removeEnemies e3
 
 
@@ -81,10 +81,12 @@ moveAllEnemies :: [Enemy] -> [Enemy]
 moveAllEnemies [] =  []
 moveAllEnemies (e@(SpaceShip (Point(x, y)) (Vector(dx, dy)) h) : xs) =  SpaceShip (Point (x + dx, y + dy )) (Vector (dx, dy)) h : moveAllEnemies xs
 moveAllEnemies (e@(Rock (Point(x, y)) (Vector(dx, dy)) h) : xs) =  Rock (Point (x + dx, y + dy )) (Vector (dx, dy)) h : moveAllEnemies xs
+moveAllEnemies (e@(Jet (Point(x, y)) (Vector(dx, dy)) h) : xs) =  Jet (Point (x + dx, y + dy )) (Vector (dx, dy)) h : moveAllEnemies xs
+moveAllEnemies (e@(MotherShip (Point(x, y)) (Vector(dx, dy)) h) : xs) =  MotherShip (Point (x + dx, y + dy )) (Vector (dx, dy)) h : moveAllEnemies xs
 
 moveAllBullets :: [Bullet] -> [Bullet]
 moveAllBullets [] = []
-moveAllBullets ((EnemyBullet  (Point(x,y)) (Vector(dx, dy))) : xs) = EnemyBullet  (Point (x + dx, y + dy)) (Vector (dx, dy)) : moveAllBullets xs
+moveAllBullets ((EnemyBullet  (Point(x,y)) (Vector(dx, dy))) : xs) = EnemyBullet  (Point (x + 2*dx, y + 2*dy)) (Vector (dx, dy)) : moveAllBullets xs
 moveAllBullets ((PlayerBullet (Point(x,y)) (Vector(dx, dy))) : xs)   = PlayerBullet (Point (x + dx, y + dy)) (Vector (dx, dy)) : moveAllBullets xs  --moet nog vervangen worden maar voor nu ff
 
 -- | Handle user input
@@ -97,6 +99,8 @@ instance Collides Enemy Bullet where
   collides e (EnemyBullet _ _) = False
   collides (Rock (Point(x, y)) _ _) (PlayerBullet (Point(a,b)) _)= a>=x-17 &&a<=x+17&& b>=y-20 &&b<=y+20 -- | hardcoded en vierkant collision
   collides  (SpaceShip (Point (x, y)) _ _) (PlayerBullet (Point(a,b)) _) = a>=x-10 && a<=x+10 && b>=y-10 && b<= y+10 --hardcoded
+  collides  (Jet (Point (x, y)) _ _) (PlayerBullet (Point(a,b)) _) = a>=x-7 && a<=x+7 && b>=y-7 && b<= y+7 --hardcoded
+  collides  (MotherShip (Point (x, y)) _ _) (PlayerBullet (Point(a,b)) _) = a>=x-20 && a<=x+20 && b>=y-20 && b<= y+20
 instance Collides Player Bullet where
   collides p (PlayerBullet _ _) = False
   collides (Player (Point(x,y)) _ _) (EnemyBullet(Point(a,b)) _) = a>=x && a<=x+30 && b>=y-10 &&b <=y+10 -- | hardcoded en vierkant collision
@@ -107,6 +111,8 @@ instance Collides Player Border where
 instance Collides Enemy Border where
   collides (Rock (Point(x, y)) _ _) (Border a b) = x-17>screenw ||x+17<(-screenw)|| y+20<(-screenh) ||y-20>screenh
   collides  (SpaceShip (Point (x, y)) _ _) (Border a b) = x-10>screenw ||x+10<(-screenw)|| y+10<(-screenh) ||y-10>screenh
+  collides  (Jet (Point (x, y)) _ _) (Border a b) = x-7>screenw ||x+7<(-screenw)|| y+7<(-screenh) ||y-7>screenh
+  collides  (MotherShip (Point (x, y)) _ _) (Border a b) = x-20>screenw ||x+20<(-screenw)|| y+20<(-screenh) ||y-20>screenh
 
 class Remove p where
   removeHeart :: p -> p
@@ -122,16 +128,28 @@ instance Remove Player where
 instance Remove Enemy where
   removeHeart (Rock p v []) = Rock p v []
   removeHeart (SpaceShip p v []) = SpaceShip p v []
+  removeHeart (Jet p v []) = Jet p v []
+  removeHeart (MotherShip p v []) = MotherShip p v []
   removeHeart (Rock p v [x]) = Rock p v []
   removeHeart (SpaceShip p v [x]) = SpaceShip p v []
+  removeHeart (Jet p v [x]) = Jet p v []
+  removeHeart (MotherShip p v [x]) = MotherShip p v []
   removeHeart (Rock p v (x:xs)) = Rock p v xs
   removeHeart (SpaceShip p v (x:xs)) = SpaceShip p v xs
+  removeHeart (Jet p v (x:xs)) = Jet p v xs
+  removeHeart (MotherShip p v (x:xs)) = MotherShip p v xs
   isDead (Rock p v []) = True
   isDead (SpaceShip p v []) = True
+  isDead (Jet p v []) = True
+  isDead (MotherShip p v []) = True
   isDead (Rock p v a) = False
   isDead (SpaceShip p v a) = False
+  isDead (Jet p v a) = False
+  isDead (MotherShip p v a) = False
   destroy (Rock p v x) = Rock p v []
   destroy (SpaceShip p v x) = SpaceShip p v []
+  destroy (Jet p v x) = Jet p v []
+  destroy (MotherShip p v x) = MotherShip p v []
 
 
 removeEnemies :: [Enemy] -> [Enemy]
@@ -148,7 +166,7 @@ spawnPowerup = undefined
 
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
 
-spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m sg) | i > 75 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m (snd (randomEnemy g))
+spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m sg) | (m>30000 && i >45) ||(m > 10000 && i > 50) || i > 55 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m (snd (randomEnemy g))
                                                                 | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
 spawnEnemyOrPowerUp i g = g
 
@@ -162,10 +180,12 @@ normalize (Vector (x,y))= Vector (x / p, y / p)
           where p = sqrt (x*x + y*y)
 
 randomEnemy :: GameState-> (Enemy, StdGen)
-randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ _ sg)  | i >= 5  = (SpaceShip (Point p) v [Heart, Heart, Heart], s1)
+randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ sc sg) | sc > 50000 && i> 18= (MotherShip (Point p) v [Heart, Heart, Heart,Heart, Heart], s1)
+                                                                                | sc > 30000 && i > 12 = (Jet (Point p) v [Heart,Heart, Heart], s1)
+                                                                                | sc > 0 && i > 7  = (SpaceShip (Point p) v [Heart, Heart, Heart], s1)
                                                                                 | otherwise = (Rock (Point p) v [Heart], s1)
                                                                                     where (y1, s) = makeRandomCoordinate sg (-screenh + 10) (screenh - 10)
-                                                                                          (i, s1) = makeRandomCoordinate s 0 10
+                                                                                          (i, s1) = makeRandomCoordinate s 0 20
                                                                                           p@(a,b) = (screenw-10,y1)
                                                                                           v = normalize (Vector (x- a , y-b))
 
@@ -182,7 +202,14 @@ shootBulletE :: Float -> [Enemy] -> InfoToShow -> InfoToShow
 shootBulletE random le (InfoToShow b (Player (Point(x,y)) v h) (e@(Rock p vec l): es) bul)  =
       shootBulletE random (e: le) (InfoToShow b (Player (Point (x,y)) v h) es bul)
 shootBulletE random le (InfoToShow b (Player (Point(x,y)) v h) (e@(SpaceShip (Point(xt, yt)) vec l): es) bul) =
-      shootBulletE random (e : le) (InfoToShow b (Player (Point (x,y)) v h) es (EnemyBullet (Point (xt - 20, yt) ) (Vector (-10, 0)) : bul))
+      shootBulletE random (e : le) (InfoToShow b (Player (Point (x,y)) v h) es (EnemyBullet (Point (xt - 20, yt) ) (Vector (-1, 0)) : bul))
+shootBulletE random le (InfoToShow b (Player (Point(x,y)) v h) (e@(Jet (Point(xt, yt)) vec l): es) bul) =
+      shootBulletE random (e : le) (InfoToShow b (Player (Point (x,y)) v h) es (EnemyBullet (Point (xt-30, yt)) (normalize (Vector (x-(xt-30), y-yt))) : bul))
+shootBulletE random le (InfoToShow b (Player (Point(x,y)) vt h) (e@(MotherShip (Point(xt, yt)) vec l): es) bul) =
+      shootBulletE random (e : le) (InfoToShow b (Player (Point (x,y)) vt h) es ([EnemyBullet (Point (xt-30, yt)) (normalize (Vector v)), EnemyBullet (Point (xt-30, yt)) (normalize (Vector v1)),EnemyBullet (Point (xt-30, yt)) (normalize (Vector v2))] ++ bul))
+      where v@(xv, yv) = (x-(xt-30), y-yt)
+            v1@(xv1, yv1) = ((x+20) -(xt-30), (y+20) - yt)
+            v2@(xv2, yv2) = ((x-20) -(xt-30), (y-20) - yt)
 shootBulletE random le i@(InfoToShow b (Player (Point(x,y)) v _) [] bul) = i{enemies = le}
 
 

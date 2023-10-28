@@ -7,7 +7,10 @@ newtype Vector = Vector (Float, Float)
 
 data Player = Player       Point Vector [Heart]
 data Enemy =  SpaceShip    Point Vector [Heart]| --can also shoot
-              Rock         Point Vector [Heart]
+              Rock         Point Vector [Heart]|
+              Jet          Point Vector [Heart]|
+              MotherShip   Point Vector [Heart]
+              
 
 data Bullet = EnemyBullet  Point Vector |
               PlayerBullet Point Vector

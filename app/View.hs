@@ -38,6 +38,9 @@ showListEnemies (x: xs) = Pictures[showEnemy x, showListEnemies xs]
 showEnemy :: Enemy -> Picture
 showEnemy  (Rock (Point(x, y)) _ _) = color white (Polygon [(x, y+20), (x+17, y+10), (x+17, y-10), (x, y-20), (x-17, y-10), (x-17, y+10)])
 showEnemy  (SpaceShip (Point (x, y)) _ _) = color red (Polygon [(x-10, y-10),(x+10, y+10), (x-10, y+10), (x+10, y-10)]) --square
+showEnemy  (Jet (Point (x, y)) _ _) = color blue (Polygon [(x-7, y-7),(x+7, y+7), (x-7, y+7), (x+7, y-7)]) --square
+showEnemy  (MotherShip (Point (x, y)) _ _) = color green (Polygon [(x-20, y-20),(x+20, y+20), (x-20, y+20), (x+20, y-20)]) --square
+
 
 showBullets :: [Bullet] -> Picture
 showBullets [] = blank
