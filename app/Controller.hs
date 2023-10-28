@@ -104,7 +104,6 @@ instance Collides Player Bullet where
 instance Collides Player Enemy where
   collides (Player(Point(x,y)) _ _) e= collides e (PlayerBullet (Point (x,y-10)) (Vector (x,x))) || collides e (PlayerBullet (Point (x,y+10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y-10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y+10)) (Vector (x,x)))  -- again het is vierkant...
 instance Collides Player Border where
-  collides :: Player -> Border -> Bool
   collides (Player (Point(x,y)) _ _) (Border a b) = y+10>=a || y-10<=b || x<=(-screenw) || x+30>=screenw
 instance Collides Enemy Border where
   collides (Rock (Point(x, y)) _ _) (Border a b) = x-17>screenw ||x+17<(-screenw)|| y+20<(-screenh) ||y-20>screenh
@@ -115,12 +114,15 @@ class Remove p where
   isDead :: p -> Bool
   destroy :: p -> p
 instance Remove Player where
+  removeHeart (Player p v []) = Player p v []
   removeHeart (Player p v [x]) = Player p v []
   removeHeart (Player p v (x:xs)) = Player p v xs
   isDead (Player p v []) = True
   isDead (Player p v a) = False
   destroy (Player p v x) = Player p v []
 instance Remove Enemy where
+  removeHeart (Rock p v []) = Rock p v []
+  removeHeart (SpaceShip p v []) = SpaceShip p v []
   removeHeart (Rock p v [x]) = Rock p v []
   removeHeart (SpaceShip p v [x]) = SpaceShip p v []
   removeHeart (Rock p v (x:xs)) = Rock p v xs
@@ -147,7 +149,7 @@ spawnPowerup = undefined
 
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
 
-spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m sg) | i > 79 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m (snd (randomEnemy g))
+spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m sg) | i > 75 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m (snd (randomEnemy g))
                                                                 | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
 spawnEnemyOrPowerUp i g = g
 
