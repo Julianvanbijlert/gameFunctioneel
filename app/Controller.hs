@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE InstanceSigs #-}
 module Controller where
   -- | This module defines how the state changes
   --   in response to time and user input
@@ -113,26 +114,16 @@ class Remove p where
   isDead :: p -> Bool
   destroy :: p -> p
 instance Remove Player where
-  removeHeart :: Player -> Player
-  removeHeart (Player p v []) = Player p v []
   removeHeart (Player p v [x]) = Player p v []
   removeHeart (Player p v (x:xs)) = Player p v xs
-  
-  isDead :: Player -> Bool
   isDead (Player p v []) = True
   isDead (Player p v a) = False
   destroy (Player p v x) = Player p v []
 instance Remove Enemy where
-  removeHeart :: Enemy -> Enemy
-  removeHeart (Rock p v []) = Rock p v []
-  removeHeart (SpaceShip p v []) = SpaceShip p v []
-
   removeHeart (Rock p v [x]) = Rock p v []
   removeHeart (SpaceShip p v [x]) = SpaceShip p v []
   removeHeart (Rock p v (x:xs)) = Rock p v xs
   removeHeart (SpaceShip p v (x:xs)) = SpaceShip p v xs
-
-  isDead :: Enemy -> Bool
   isDead (Rock p v []) = True
   isDead (SpaceShip p v []) = True
   isDead (Rock p v a) = False

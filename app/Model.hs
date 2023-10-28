@@ -60,22 +60,13 @@ screenh :: Float
 screenh = screenHeights / 2
 
 initialPlayer :: Player
-<<<<<<< HEAD
 initialPlayer = Player (Point(-300, 0)) (Vector(10, 10)) [Shield, Heart, Heart, Heart]
-=======
-initialPlayer = Player (Point (-300, 0)) (Vector (0, 10)) [Heart, Heart, Heart, Shield]
->>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
 
 borders :: Border
 borders = Border (screenh - 10) (-screenh + 10) --top y bottom y
 
 startEnemies :: [Enemy]
-<<<<<<< HEAD
-startEnemies = [SpaceShip (Point(200, 300)) (Vector(-2, -1)) [Heart],
-                Rock      (Point(200, 200)) (Vector(-2, -1)) [Heart] ]
-=======
 startEnemies = [ ]
->>>>>>> 1d6908c39c2881aa8b45f42d89caf082a6880451
 
 initialState :: StdGen -> GameState
 initialState = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 --nog een random stdgen nodig
