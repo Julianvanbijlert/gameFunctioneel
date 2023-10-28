@@ -1,5 +1,4 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE InstanceSigs #-}
 module Controller where
   -- | This module defines how the state changes
   --   in response to time and user input
@@ -45,7 +44,7 @@ checkState gstate@(GameState i t GameOver sc _) = gstate
 
 collideFunction :: GameState -> GameState
 collideFunction gstate@(GameState(InfoToShow o p e b) _ _ _ _) =
-   checkDead gstate{infoToShow = InfoToShow o p2 e3 b2}
+   checkDead gstate{infoToShow = InfoToShow o p2 e4 b2}
     where p0 = collideFunctionBoard p o
           (p1, e1) = collideFunctionPlayer p0 e
           (p2, b1) = collideFunctionPlayer p1 b
@@ -102,7 +101,7 @@ instance Collides Player Bullet where
   collides p (PlayerBullet _ _) = False
   collides (Player (Point(x,y)) _ _) (EnemyBullet(Point(a,b)) _) = a>=x && a<=x+30 && b>=y-10 &&b <=y+10 -- | hardcoded en vierkant collision
 instance Collides Player Enemy where
-  collides (Player(Point(x,y)) _ _) e= collides e (PlayerBullet (Point (x,y-10)) (Vector (x,x))) || collides e (PlayerBullet (Point (x,y+10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y-10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y+10)) (Vector (x,x)))  -- again het is vierkant...
+  collides (Player(Point(x,y)) _ _) e = collides e (PlayerBullet (Point (x,y-10)) (Vector (x,x))) || collides e (PlayerBullet (Point (x,y+10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y-10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y+10)) (Vector (x,x)))  -- again het is vierkant...
 instance Collides Player Border where
   collides (Player (Point(x,y)) _ _) (Border a b) = y+10>=a || y-10<=b || x<=(-screenw) || x+30>=screenw
 instance Collides Enemy Border where
