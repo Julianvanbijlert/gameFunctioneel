@@ -13,7 +13,9 @@ import Model
       Enemy(..),
       Player(..),
       InfoToShow(InfoToShow, enemies),
-      GameState(GameState, elapsedTime, score, state, infoToShow), Heart (Heart),Border (Border), screenw, screenh )
+      GameState(GameState, elapsedTime, score, state, infoToShow), Heart (Heart),Border (Border), screenw, screenh,
+      initialState 
+    )
 
 
 
@@ -182,8 +184,8 @@ normalize (Vector (x,y))= Vector (x / p, y / p)
 randomEnemy :: GameState-> (Enemy, StdGen)
 randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ sc sg) | sc > 50000 && i> 18= (MotherShip (Point p) v [Heart, Heart, Heart,Heart, Heart], s1)
                                                                                 | sc > 30000 && i > 12 = (Jet (Point p) v [Heart,Heart, Heart], s1)
-                                                                                | sc > 0 && i > 7  = (SpaceShip (Point p) v [Heart, Heart, Heart], s1)
-                                                                                | otherwise = (Rock (Point p) v [Heart], s1)
+                                                                                | sc > 0 && i > 7  = (SpaceShip (Point p) v [Heart], s1)
+                                                                                | otherwise = (Rock (Point p) v [Heart, Heart, Heart], s1)
                                                                                     where (y1, s) = makeRandomCoordinate sg (-screenh + 10) (screenh - 10)
                                                                                           (i, s1) = makeRandomCoordinate s 0 20
                                                                                           p@(a,b) = (screenw-10,y1)
@@ -218,8 +220,7 @@ hittWall :: Enemy -> Enemy
 hittWall (SpaceShip p (Vector(dx, dy)) h) = SpaceShip p (Vector (dx, -dy)) h
 hittWall rock = destroy rock
 
-inputKey :: Event -> GameState -> GameState
-inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Running sc _)
+{-inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Running sc _)
   = gstate{state = Paused}
 inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Paused sc _)
   = gstate{state = Running}
@@ -231,7 +232,45 @@ inputKey (EventKey (SpecialKey k) Down _ _) gstate@(GameState i e Running sc _)
 
 inputKey _ gstate@(GameState i e Paused sc _) = gstate
 inputKey _ gstate = gstate -- Otherwise keep the same
+-}
+inputKey :: Event -> GameState -> GameState
+inputKey e gstate = case state gstate of
+            Running -> runInput e gstate
+            Paused -> pauseInput e gstate
+            GameOver -> gOverInput e gstate
 
+runInput :: Event -> GameState -> GameState
+runInput (EventKey (SpecialKey KeyEsc) Down _ _) gstate= gstate{state = Paused}
+runInput (EventKey (SpecialKey k) Down _ _) gstate@(GameState i e Running sc _) = gstate {infoToShow = handleInputSpecial k i}
+runInput (EventKey (Char c) Down _  _) gstate@(GameState i e s sc _) =            gstate { infoToShow = handleInput c i }
+runInput _ gstate@(GameState i e s sc _) = gstate    
+
+pauseInput :: Event -> GameState -> GameState
+pauseInput (EventKey (SpecialKey KeyEsc) Down _ _) gstate = gstate{state = Running}
+pauseInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = pauseMouse (x, y) g
+pauseInput _ gstate = gstate   
+
+gOverInput :: Event -> GameState -> GameState
+gOverInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = gOverMouse (x, y) g
+gOverInput _ gstate = gstate   
+
+pauseMouse :: (Float, Float) -> GameState -> GameState
+pauseMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = g{state = Running}
+                      | inBox 0 0 l = undefined
+                      | inBox 0 (-screenh * 0.5) l = g{state = GameOver}
+                      | otherwise = g
+
+gOverMouse :: (Float, Float) -> GameState -> GameState
+gOverMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = initialState (mkStdGen 60)
+                      | inBox 0 0 l = undefined
+                      | inBox 0 (-screenh * 0.5) l = undefined
+                      | otherwise = g
+
+inBox :: Float -> Float -> (Float, Float) -> Bool
+inBox dx dy (x, y) = x > dx - bw && x < bw + dx &&
+                     y > dy - bh && y < bh + dy
+                    where bw = screenw * 0.25
+                          bh = screenh * 0.1
 {-Dit is een functie die inputs handled, alleen moet er nog gefixt worden dat ingedrukt houden 
 meerdere interacties doet en dat het niet dubbel aangeroepen is als het omhoog gaat en losgelaten wordt-}
 handleInput :: Char -> InfoToShow -> InfoToShow

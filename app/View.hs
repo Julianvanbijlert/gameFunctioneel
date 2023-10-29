@@ -12,20 +12,23 @@ import Model
       Player(..),
       State(..),
       InfoToShow(ShowAChar, ShowNothing, InfoToShow, ShowANumber),
-      GameState(GameState, infoToShow),
+      GameState(GameState, infoToShow, state),
       screenw,
-      screenh )
+      screenh, )
 
 
 view :: GameState -> IO Picture
 view = return . viewPure
 
 viewPure :: GameState -> Picture
-viewPure gstate@(GameState i t s sc _) = case infoToShow gstate of
-  ShowNothing   -> blank
-  InfoToShow b p xs bs -> Pictures [showBorder b, showPlayer p, showListEnemies xs, showBullets bs, showScore sc, showLives p]
-  ShowANumber n -> color green (text (show n))
-  ShowAChar   c -> color green (text [c])
+viewPure gstate@(GameState i t s sc _) = case state gstate of
+  Running -> case infoToShow gstate of
+            ShowNothing   -> blank
+            InfoToShow b p xs bs -> Pictures [showBorder b, showPlayer p, showListEnemies xs, showBullets bs, showScore sc, showLives p]
+            ShowANumber n -> color green (text (show n))
+            ShowAChar   c -> color green (text [c])
+  Paused -> pause
+  GameOver -> gameOver
 
 
 showPlayer :: Player -> Picture
@@ -82,7 +85,22 @@ drawShield (Point (x, y)) = Translate (-Model.screenw + 50 + x) (Model.screenh -
 shield :: Picture
 shield = color white (Scale 0.2 0.2 (text (show "U")))
 
+pause :: Picture
+pause = Pictures[showContinue, showSave, showExit]
+                where showContinue = Translate 0 (screenh * 0.5) (textBox "Continue")
+                      showSave     = textBox "Save"
+                      showExit     = Translate 0 (-screenh * 0.5) (textBox "Exit")
 
+gameOver :: Picture
+gameOver = Pictures[showStart, showHighScore, showControls]
+                where showStart     = Translate 0 (screenh * 0.5) (textBox "Start game")
+                      showHighScore = textBox "High Scores"
+                      showControls  = Translate 0 (-screenh * 0.5)(textBox "Controls")
+
+textBox :: String -> Picture
+textBox s = Pictures [box, text]
+          where box = Color white $ rectangleWire (screenw * 0.5) (screenh * 0.2)
+                text = Color white $ Scale 0.2 0.2 $ Translate (-(screenw * 0.1 * fromIntegral (length s))) (-(screenh * 0.2)) $ Text s
 
 stateAction :: State -> Picture --niet goed
 stateAction Running = undefined
