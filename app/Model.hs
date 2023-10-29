@@ -23,7 +23,7 @@ data Border = Border Float Float --top y, bottom y
 data Powerup = FastShot | DoubleBullet | Extralife
 
 
-data State = Running | Paused | GameOver
+data State = Running | Paused | GameOver | Dead
 data Game = Game {}
 
 data InfoToShow = InfoToShow{border :: Border, player :: Player, enemies :: [Enemy], bullets :: [Bullet]}

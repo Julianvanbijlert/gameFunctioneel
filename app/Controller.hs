@@ -8,7 +8,7 @@ import Model
       Powerup,
       Vector(Vector),
       Point(Point),
-      State(Paused, GameOver, Running),
+      State(Paused, GameOver, Running, Dead),
       Bullet(..),
       Enemy(..),
       Player(..),
@@ -43,6 +43,7 @@ checkState :: GameState -> GameState
 checkState gstate@(GameState i _ Running sc _) = collideFunction . moveEverything $ gstate {score = sc + 1 }
 checkState gstate@(GameState i t Paused sc _) = gstate
 checkState gstate@(GameState i t GameOver sc _) = gstate
+checkState gstate@(GameState i t Dead sc _) = gstate
 
 collideFunction :: GameState -> GameState
 collideFunction gstate@(GameState(InfoToShow o p e b) _ _ _ _) =
@@ -75,8 +76,8 @@ moveEverything (GameState (InfoToShow b p xs bs) t state sc sg) = GameState (Inf
                                                                 where enem = moveAllEnemies xs
                                                                       bul  = moveAllBullets bs
 checkDead :: GameState -> GameState
-checkDead gstate@(GameState (InfoToShow _ p _ _) _ Running _ _)  | isDead p = gstate{state = GameOver}
-                                                                | otherwise = gstate
+checkDead gstate@(GameState (InfoToShow _ p _ _) _ Running _ _)  | isDead p = gstate{state = Dead}
+                                                                 | otherwise = gstate
 
 
 moveAllEnemies :: [Enemy] -> [Enemy]
@@ -238,6 +239,7 @@ inputKey e gstate = case state gstate of
             Running -> runInput e gstate
             Paused -> pauseInput e gstate
             GameOver -> gOverInput e gstate
+            Dead -> deadInput e gstate
 
 runInput :: Event -> GameState -> GameState
 runInput (EventKey (SpecialKey KeyEsc) Down _ _) gstate= gstate{state = Paused}
@@ -254,6 +256,10 @@ gOverInput :: Event -> GameState -> GameState
 gOverInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = gOverMouse (x, y) g
 gOverInput _ gstate = gstate   
 
+deadInput :: Event -> GameState -> GameState
+deadInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = deadMouse (x, y) g
+deadInput _ gstate = gstate  
+
 pauseMouse :: (Float, Float) -> GameState -> GameState
 pauseMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = g{state = Running}
                       | inBox 0 0 l = undefined
@@ -265,6 +271,13 @@ gOverMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = initialState (mkStdGen 60)
                       | inBox 0 0 l = undefined
                       | inBox 0 (-screenh * 0.5) l = undefined
                       | otherwise = g
+
+deadMouse :: (Float, Float) -> GameState -> GameState
+deadMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = initialState (mkStdGen 60)
+                      | inBox 0 0 l = undefined
+                      | inBox 0 (-screenh * 0.5) l = g{state = GameOver}
+                      | otherwise = g
+
 
 inBox :: Float -> Float -> (Float, Float) -> Bool
 inBox dx dy (x, y) = x > dx - bw && x < bw + dx &&

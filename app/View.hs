@@ -24,12 +24,15 @@ viewPure :: GameState -> Picture
 viewPure gstate@(GameState i t s sc _) = case state gstate of
   Running -> case infoToShow gstate of
             ShowNothing   -> blank
-            InfoToShow b p xs bs -> Pictures [showBorder b, showPlayer p, showListEnemies xs, showBullets bs, showScore sc, showLives p]
+            InfoToShow b p xs bs -> showInfoToShow i sc
             ShowANumber n -> color green (text (show n))
             ShowAChar   c -> color green (text [c])
   Paused -> pause
   GameOver -> gameOver
+  Dead -> dead gstate
 
+showInfoToShow :: InfoToShow -> Int -> Picture
+showInfoToShow (InfoToShow b p xs bs) sc = Pictures [showBorder b, showPlayer p, showListEnemies xs, showBullets bs, showScore sc, showLives p]
 
 showPlayer :: Player -> Picture
 showPlayer (Player (Point(x, y)) _ _) = color green (Polygon [(x, y-10), (x, y +10), (x+30, y)] ) --triangle
@@ -101,6 +104,13 @@ textBox :: String -> Picture
 textBox s = Pictures [box, text]
           where box = Color white $ rectangleWire (screenw * 0.5) (screenh * 0.2)
                 text = Color white $ Scale 0.2 0.2 $ Translate (-(screenw * 0.1 * fromIntegral (length s))) (-(screenh * 0.2)) $ Text s
+
+dead :: GameState -> Picture
+dead g@(GameState i t s sc _)= Pictures[score, shownew, showSave, showHome]
+        where score        = showInfoToShow i sc--showScore sc
+              shownew      = Translate 0 (screenh * 0.5) (textBox "New Game")
+              showSave     = textBox "Save score"
+              showHome     = Translate 0 (-screenh * 0.5) (textBox "Home")
 
 stateAction :: State -> Picture --niet goed
 stateAction Running = undefined
