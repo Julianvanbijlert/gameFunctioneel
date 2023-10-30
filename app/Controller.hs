@@ -46,26 +46,20 @@ checkState gstate@(GameState i t GameOver sc _) = gstate
 checkState gstate@(GameState i t Dead sc _) = gstate
 
 collideFunction :: GameState -> GameState
-collideFunction gstate@(GameState(InfoToShow o p e b) _ _ _ _) =
+collideFunction gstate@(GameState(InfoToShow o p e b) t s sc sg) =
    checkDead gstate{infoToShow = InfoToShow o p2 e4 b2}
     where p0 = collideFunctionBoard p o
-          (p1, e1) = collideFunctionPlayer p0 e
-          (p2, b1) = collideFunctionPlayer p1 b
-          (e2, b2) = collideFunctionEnemy e1 b1
+          (p1, e1, sc1) = collideFunctions p0 e sc
+          (p2, b1, sc2) = collideFunctions p1 b sc1
+          (e2, b2, sc3) = collideFunctionEnemy e1 b1 sc2
           e3 = filter (not.(`collides` o)) e2
           e4 = removeEnemies e3
 
-
-collideFunctionPlayer :: (Collides s a, Remove s) => s -> [a] -> (s, [a])
-collideFunctionPlayer p [] = (p, [])
-collideFunctionPlayer p (x:xs) | collides p x = collideFunctionPlayer (removeHeart p) xs
-                               | otherwise = let (q, ys) = collideFunctionPlayer p xs in (q, x:ys)
-
-collideFunctionEnemy :: (Collides s a, Remove s) => [s] -> [a] -> ([s], [a])
-collideFunctionEnemy e [] = (e, [])
-collideFunctionEnemy [] b = ([], b)
-collideFunctionEnemy (e:es) b = let (ys, zs) = collideFunctionEnemy es b1 in (e1:ys, zs)
-      where (e1, b1) = collideFunctionPlayer e b
+collideFunctionEnemy :: (Collides s a, Remove s, Num score) => [s] -> [a] -> score -> ([s], [a], score)
+collideFunctionEnemy e [] sc = (e, [], sc)
+collideFunctionEnemy [] b sc = ([], b, sc)
+collideFunctionEnemy (e:es) b sc = let (ys, zs, sc0) = collideFunctionEnemy es b1 s in (e1:ys, zs, sc0)
+      where (e1, b1, s) = collideFunctions e b sc
 
 collideFunctionBoard :: (Collides s a, Remove s) => s -> a -> s
 collideFunctionBoard p b | collides p b = destroy p
@@ -98,17 +92,33 @@ input e gstate = return (inputKey e gstate)
 
 class Collides s a where
   collides :: s -> a -> Bool
+  collideFunctions :: Num score => s -> [a] -> score -> (s, [a], score)
 instance Collides Enemy Bullet where
   collides e (EnemyBullet _ _) = False
   collides (Rock (Point(x, y)) _ _) (PlayerBullet (Point(a,b)) _)= a>=x-17 &&a<=x+17&& b>=y-20 &&b<=y+20 -- | hardcoded en vierkant collision
   collides  (SpaceShip (Point (x, y)) _ _) (PlayerBullet (Point(a,b)) _) = a>=x-10 && a<=x+10 && b>=y-10 && b<= y+10 --hardcoded
   collides  (Jet (Point (x, y)) _ _) (PlayerBullet (Point(a,b)) _) = a>=x-7 && a<=x+7 && b>=y-7 && b<= y+7 --hardcoded
   collides  (MotherShip (Point (x, y)) _ _) (PlayerBullet (Point(a,b)) _) = a>=x-20 && a<=x+20 && b>=y-20 && b<= y+20
+  collideFunctions e [] sc = (e, [], sc)
+  collideFunctions r@(Rock a b c) (x:xs) sc| collides r x = collideFunctions (removeHeart r) xs (sc + 100)
+                                            | otherwise = let (q, ys, s) = collideFunctions r xs sc in (q, x:ys, s)
+  collideFunctions r@(SpaceShip a b c) (x:xs) sc| collides r x = collideFunctions (removeHeart r) xs (sc + 200)
+                                            | otherwise = let (q, ys, s) = collideFunctions r xs sc in (q, x:ys, s)
+  collideFunctions r@(MotherShip a b c) (x:xs) sc| collides r x = collideFunctions (removeHeart r) xs (sc + 1000)
+                                            | otherwise = let (q, ys, s) = collideFunctions r xs sc in (q, x:ys, s)
+  collideFunctions r@(Jet a b c) (x:xs) sc| collides r x = collideFunctions (removeHeart r) xs (sc + 500)
+                                            | otherwise = let (q, ys, s) = collideFunctions r xs sc in (q, x:ys, s)
 instance Collides Player Bullet where
   collides p (PlayerBullet _ _) = False
   collides (Player (Point(x,y)) _ _) (EnemyBullet(Point(a,b)) _) = a>=x && a<=x+30 && b>=y-10 &&b <=y+10 -- | hardcoded en vierkant collision
+  collideFunctions p [] sc = (p, [], sc)
+  collideFunctions p (x:xs) sc| collides p x = collideFunctions (removeHeart p) xs (sc-100)
+                                 | otherwise = let (q, ys, s) = collideFunctions p xs sc in (q, x:ys, s)
 instance Collides Player Enemy where
   collides (Player(Point(x,y)) _ _) e = collides e (PlayerBullet (Point (x,y-10)) (Vector (x,x))) || collides e (PlayerBullet (Point (x,y+10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y-10)) (Vector (x,x))) ||collides e (PlayerBullet (Point (x+30,y+10)) (Vector (x,x)))  -- again het is vierkant...
+  collideFunctions p [] sc = (p, [], sc)
+  collideFunctions p (x:xs) sc | collides p x = let (q, ys, s) = collideFunctions (removeHeart p) xs (sc-200) in (q, destroy x:ys, s)
+                               | otherwise = let (q, ys, s) = collideFunctions p xs sc in (q, x:ys, s)
 instance Collides Player Border where
   collides (Player (Point(x,y)) _ _) (Border a b) = y+10>=a || y-10<=b || x<=(-screenw) || x+30>=screenw
 instance Collides Enemy Border where
