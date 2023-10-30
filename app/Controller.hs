@@ -99,6 +99,10 @@ class Collides s a where
   collideFunctions :: Num score => s -> [a] -> score -> (s, [a], score)
 instance Collides Enemy Bullet where
   collides e (EnemyBullet _ _) = False
+  collides (Rock _ _ [] _) p = False
+  collides (SpaceShip _ _ [] _) p = False
+  collides (Jet _ _ [] _) p = False
+  collides (MotherShip _ _ [] _) p =  False
   collides (Rock (Point(x, y)) _ _ _) (PlayerBullet (Point(a,b)) _)= a>=x-17 &&a<=x+17&& b>=y-20 &&b<=y+20 -- | hardcoded en vierkant collision
   collides  (SpaceShip (Point (x, y)) _ _ _) (PlayerBullet (Point(a,b)) _) = a>=x-10 && a<=x+10 && b>=y-10 && b<= y+10 --hardcoded
   collides  (Jet (Point (x, y)) _ _ _) (PlayerBullet (Point(a,b)) _) = a>=x-7 && a<=x+7 && b>=y-7 && b<= y+7 --hardcoded
