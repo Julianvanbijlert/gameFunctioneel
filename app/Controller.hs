@@ -274,10 +274,12 @@ gOverMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = initialState (mkStdGen 60)
 
 deadMouse :: (Float, Float) -> GameState -> GameState
 deadMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = initialState (mkStdGen 60)
-                      | inBox 0 0 l = undefined
-                      | inBox 0 (-screenh * 0.5) l = g{state = GameOver}
-                      | otherwise = g
+                     | inBox 0 0 l = undefined
+                     | inBox 0 (-screenh * 0.5) l = g{state = GameOver}
+                     | otherwise = g
 
+
+                   
 
 inBox :: Float -> Float -> (Float, Float) -> Bool
 inBox dx dy (x, y) = x > dx - bw && x < bw + dx &&

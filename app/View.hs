@@ -116,3 +116,12 @@ stateAction :: State -> Picture --niet goed
 stateAction Running = undefined
 stateAction Paused = undefined
 stateAction GameOver = undefined
+
+getHighScores :: IO Picture
+getHighScores = do 
+                   config <- readFile "Scores.txt"
+                   let f:s:t:fo:fi:_ = lines config
+                   showHighScores f s t fo fi
+
+showHighScores :: String -> String -> String -> String -> String ->IO Picture
+showHighScores f s t fo fi = return blank
