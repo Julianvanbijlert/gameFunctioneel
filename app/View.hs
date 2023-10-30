@@ -39,14 +39,27 @@ showPlayer (Player (Point(x, y)) _ _) = color green (Polygon [(x, y-10), (x, y +
 
 showListEnemies :: [Enemy] -> Picture
 showListEnemies [] = blank
-showListEnemies (x: xs) = Pictures[showEnemy x, showListEnemies xs]
+showListEnemies e = Pictures $ map showEnemy e
 
 showEnemy :: Enemy -> Picture
-showEnemy  (Rock (Point(x, y)) _ _) = color white (Polygon [(x, y+20), (x+17, y+10), (x+17, y-10), (x, y-20), (x-17, y-10), (x-17, y+10)])
-showEnemy  (SpaceShip (Point (x, y)) _ _) = color red (Polygon [(x-10, y-10),(x+10, y+10), (x-10, y+10), (x+10, y-10)]) --square
-showEnemy  (Jet (Point (x, y)) _ _) = color blue (Polygon [(x-7, y-7),(x+7, y+7), (x-7, y+7), (x+7, y-7)]) --square
-showEnemy  (MotherShip (Point (x, y)) _ _) = color green (Polygon [(x-20, y-20),(x+20, y+20), (x-20, y+20), (x+20, y-20)]) --square
+showEnemy e@(Rock _ _ [] _) = showExplosion e
+showEnemy e@(SpaceShip _ _ [] _) = showExplosion e
+showEnemy e@(Jet _ _ [] _) = showExplosion e
+showEnemy e@(MotherShip _ _ [] _) = showExplosion e
+showEnemy  (Rock (Point(x, y)) _ _ _) = color white (Polygon [(x, y+20), (x+17, y+10), (x+17, y-10), (x, y-20), (x-17, y-10), (x-17, y+10)])
+showEnemy  (SpaceShip (Point (x, y)) _ _ _) = color red (Polygon [(x-10, y-10),(x+10, y+10), (x-10, y+10), (x+10, y-10)]) --square
+showEnemy  (Jet (Point (x, y)) _ _ _) = color blue (Polygon [(x-7, y-7),(x+7, y+7), (x-7, y+7), (x+7, y-7)]) --square
+showEnemy  (MotherShip (Point (x, y)) _ _ _) = color green (Polygon [(x-20, y-20),(x+20, y+20), (x-20, y+20), (x+20, y-20)]) --square
 
+showExplosion :: Enemy -> Picture 
+showExplosion  (Rock (Point(x, y)) _ _ h) = Pictures[color orange (Polygon [(x-9-c, y-17-c), (x-9-c, y+17+c), (x+17+c, y)]),color orange (Polygon [(x+9+c, y-17-c), (x+9+c, y+17+c), (x-17-c, y)])]
+            where c = (h/10)
+showExplosion  (SpaceShip (Point (x, y)) _ _ h) = Pictures[color orange (Polygon [(x-4-c, y-10-c),(x-4-c, y+10+c), (x+10+c, y)]), color orange (Polygon [(x+4+c, y-10-c),(x+4+c, y+10+c), (x-10-c, y)])] --square
+            where c = (h/10)
+showExplosion  (Jet (Point (x, y)) _ _ h) = Pictures[color orange (Polygon [(x-3-c, y-7-c),(x-3-c, y+7+c), (x+7+c, y)]), color orange (Polygon [(x+3+c, y-7-c),(x+3+c, y+7+c), (x-7-c, y)]) ]--square
+            where c = (h/10)
+showExplosion  (MotherShip (Point (x, y)) _ _ h) = Pictures[color orange (Polygon [(x-9-c, y-20-c),(x-9-c, y+20+c), (x+20+c, y)]),color orange (Polygon [(x+9+c, y-20-c),(x+9+c, y+20+c), (x-20-c, y)])] --square
+            where c = (h/10)
 
 showBullets :: [Bullet] -> Picture
 showBullets [] = blank

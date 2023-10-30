@@ -22,7 +22,7 @@ Number of simulation steps to take for each second of real time.
 -> world	
 The initial world.
 
--> (world -> Picture)	
+-> (world -> Picture)
 A function to convert the world a picture.
 
 -> (Event -> world -> world)	
@@ -52,7 +52,7 @@ backgroundColor :: Color
 backgroundColor = black
 
 fps :: Int
-fps = 100
+fps = 60
 
 
 
