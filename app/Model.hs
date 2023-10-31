@@ -32,6 +32,7 @@ data InfoToShow = InfoToShow{border :: Border, player :: Player, enemies :: [Ene
                 | ShowNothing
                 | ShowANumber Int
                 | ShowAChar   Char
+                | ShowHighScores
               --  | ShowBorder Border
               --  | ShowPlayer Player
               --  | ShowEnemy Enemy
@@ -48,6 +49,7 @@ data GameState = GameState {
                  , elapsedTime :: Float
                  , state :: State
                  , score :: Int
+                 , hScores :: [String]
                  , rndGen :: StdGen
                  }
 
@@ -73,4 +75,4 @@ startEnemies :: [Enemy]
 startEnemies = [ ]
 
 initialState :: StdGen -> GameState
-initialState = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 --nog een random stdgen nodig
+initialState = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 [] --nog een random stdgen nodig

@@ -11,7 +11,7 @@ import Model
       Enemy(..),
       Player(..),
       State(..),
-      InfoToShow(ShowAChar, ShowNothing, InfoToShow, ShowANumber),
+      InfoToShow(ShowAChar, ShowNothing, InfoToShow, ShowANumber, ShowHighScores),
       GameState(GameState, infoToShow, state),
       screenw,
       screenh, )
@@ -21,14 +21,16 @@ view :: GameState -> IO Picture
 view = return . viewPure
 
 viewPure :: GameState -> Picture
-viewPure gstate@(GameState i t s sc _) = case state gstate of
+viewPure gstate@(GameState i t s sc hs _) = case state gstate of
   Running -> case infoToShow gstate of
             ShowNothing   -> blank
             InfoToShow b p xs bs -> showInfoToShow i sc
             ShowANumber n -> color green (text (show n))
             ShowAChar   c -> color green (text [c])
   Paused -> pause
-  GameOver -> gameOver
+  GameOver -> case infoToShow gstate of
+                  InfoToShow b p xs bs -> gameOver
+                  ShowHighScores -> showHighScores hs --Eigenlijk moet hs nog gesorteerd worden
   Dead -> dead gstate
 
 showInfoToShow :: InfoToShow -> Int -> Picture
@@ -53,13 +55,13 @@ showEnemy  (MotherShip (Point (x, y)) _ _ _) = color green (Polygon [(x-20, y-20
 
 showExplosion :: Enemy -> Picture 
 showExplosion  (Rock (Point(x, y)) _ _ h) = Pictures[color orange (Polygon [(x-9-c, y-17-c), (x-9-c, y+17+c), (x+17+c, y)]),color orange (Polygon [(x+9+c, y-17-c), (x+9+c, y+17+c), (x-17-c, y)])]
-            where c = (h/10)
+            where c = h/10
 showExplosion  (SpaceShip (Point (x, y)) _ _ h) = Pictures[color orange (Polygon [(x-4-c, y-10-c),(x-4-c, y+10+c), (x+10+c, y)]), color orange (Polygon [(x+4+c, y-10-c),(x+4+c, y+10+c), (x-10-c, y)])] --square
-            where c = (h/10)
+            where c = h/10
 showExplosion  (Jet (Point (x, y)) _ _ h) = Pictures[color orange (Polygon [(x-3-c, y-7-c),(x-3-c, y+7+c), (x+7+c, y)]), color orange (Polygon [(x+3+c, y-7-c),(x+3+c, y+7+c), (x-7-c, y)]) ]--square
-            where c = (h/10)
+            where c = h/10
 showExplosion  (MotherShip (Point (x, y)) _ _ h) = Pictures[color orange (Polygon [(x-9-c, y-20-c),(x-9-c, y+20+c), (x+20+c, y)]),color orange (Polygon [(x+9+c, y-20-c),(x+9+c, y+20+c), (x-20-c, y)])] --square
-            where c = (h/10)
+            where c = h/10
 
 showBullets :: [Bullet] -> Picture
 showBullets [] = blank
@@ -111,7 +113,7 @@ gameOver :: Picture
 gameOver = Pictures[showStart, showHighScore, showControls]
                 where showStart     = Translate 0 (screenh * 0.5) (textBox "Start game")
                       showHighScore = textBox "High Scores"
-                      showControls  = Translate 0 (-screenh * 0.5)(textBox "Controls")
+                      showControls  = Translate 0 (-screenh * 0.5)(textBox "Load game")
 
 textBox :: String -> Picture
 textBox s = Pictures [box, text]
@@ -119,7 +121,7 @@ textBox s = Pictures [box, text]
                 text = Color white $ Scale 0.2 0.2 $ Translate (-(screenw * 0.1 * fromIntegral (length s))) (-(screenh * 0.2)) $ Text s
 
 dead :: GameState -> Picture
-dead g@(GameState i t s sc _)= Pictures[score, shownew, showSave, showHome]
+dead g@(GameState i t s sc _ _)= Pictures[score, shownew, showSave, showHome]
         where score        = showInfoToShow i sc--showScore sc
               shownew      = Translate 0 (screenh * 0.5) (textBox "New Game")
               showSave     = textBox "Save score"
@@ -129,12 +131,30 @@ stateAction :: State -> Picture --niet goed
 stateAction Running = undefined
 stateAction Paused = undefined
 stateAction GameOver = undefined
-
+{-
 getHighScores :: IO Picture
 getHighScores = do 
-                   config <- readFile "Scores.txt"
-                   let f:s:t:fo:fi:_ = lines config
-                   showHighScores f s t fo fi
+  config <- readFile "Scores.txt"
+  let f:s:t:fo:fi:_ = lines config
+  return (showHighScores f s t fo fi)
+  -}
 
-showHighScores :: String -> String -> String -> String -> String ->IO Picture
-showHighScores f s t fo fi = return blank
+--showHighScores :: Maybe String -> Maybe String -> Maybe String -> Maybe String -> Maybe String -> Picture
+--showHighScores Nothing Nothing Nothing Nothing Nothing = blank
+
+
+--inefficient maar werkt :D
+showHighScores :: [String]-> Picture
+showHighScores (f: s: t: fo: fi: _) = Pictures[ scoreToPic 0.5 f, scoreToPic 0.3 s, scoreToPic 0.1 t, scoreToPic (-0.1) fo, scoreToPic (-0.3) fi, Translate 0 (-screenh * 0.6) (textBox "Home")]
+showHighScores (f: s: t: fo:  _)    = Pictures[ scoreToPic 0.5 f, scoreToPic 0.3 s, scoreToPic 0.1 t, scoreToPic (-0.1) fo, Translate 0 (-screenh * 0.6) (textBox "Home")]
+showHighScores (f: s: t: _)         = Pictures[ scoreToPic 0.5 f, scoreToPic 0.3 s, scoreToPic 0.1 t, Translate 0 (-screenh * 0.6) (textBox "Home")]
+showHighScores (f: s: _)            = Pictures[ scoreToPic 0.5 f, scoreToPic 0.3 s, Translate 0 (-screenh * 0.6) (textBox "Home")]
+showHighScores (f: _)               = Pictures[ scoreToPic 0.5 f,  Translate 0 (-screenh * 0.6) (textBox "Home")]
+showHighScores []                   = Translate 0 (-screenh * 0.6) (textBox "Home")
+
+scoreToPic :: Float -> String -> Picture
+scoreToPic y s = Translate 0 (screenh * y)  (maybeToScore s)
+
+maybeToScore :: String -> Picture
+--maybeToScore Nothing = blank
+maybeToScore s = Color white $ Scale 0.2 0.2 $ Translate (-(screenw * 0.1 * fromIntegral (length s))) (-(screenh * 0.2)) $ Text s
