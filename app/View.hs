@@ -16,6 +16,10 @@ import Model
       screenw,
       screenh, )
 
+import Data.List
+import Data.Ord (comparing)
+
+
 
 view :: GameState -> IO Picture
 view = return . viewPure
@@ -30,7 +34,7 @@ viewPure gstate@(GameState i t s sc hs _) = case state gstate of
   Paused -> pause
   GameOver -> case infoToShow gstate of
                   InfoToShow b p xs bs -> gameOver
-                  ShowHighScores -> showHighScores hs --Eigenlijk moet hs nog gesorteerd worden
+                  ShowHighScores -> showHighScores $ orderList hs 
   Dead -> dead gstate
 
 showInfoToShow :: InfoToShow -> Int -> Picture
@@ -158,3 +162,9 @@ scoreToPic y s = Translate 0 (screenh * y)  (maybeToScore s)
 maybeToScore :: String -> Picture
 --maybeToScore Nothing = blank
 maybeToScore s = Color white $ Scale 0.2 0.2 $ Translate (-(screenw * 0.1 * fromIntegral (length s))) (-(screenh * 0.2)) $ Text s
+
+orderList :: [String] -> [String]
+orderList = sortBy compareTwo
+
+compareTwo :: String -> String -> Ordering
+compareTwo a b = compare (read b :: Int) (read a :: Int) 

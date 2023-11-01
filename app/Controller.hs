@@ -18,7 +18,7 @@ import Model
     )
 
 
-
+import Data.Char (isDigit)
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
@@ -306,11 +306,11 @@ gOverMouse l@(x,y) g = case infoToShow g of
 
 
 hsgOverMouse ::(Float, Float) -> GameState -> GameState
-hsgOverMouse l@(x, y) g | inBox 0 (-screenh * 0.6) l = (initialState (mkStdGen 60)){state = GameOver}
-                        | otherwise = g
+hsgOverMouse l@(x, y) g@(GameState _ _ _ _ hs d) | inBox 0 (-screenh * 0.6) l = (initialState d hs){state = GameOver}
+                                                    | otherwise = g
 
 igOverMouse :: (Float, Float) -> GameState -> GameState
-igOverMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = initialState (mkStdGen 60)
+igOverMouse l@(x, y) g@(GameState _ _ _ _ hs d) | inBox 0 (screenh * 0.5) l = initialState d hs
                        | inBox 0 0 l = g{infoToShow = ShowHighScores}
                        | inBox 0 (-screenh * 0.5) l = undefined
                        | otherwise = g
@@ -318,7 +318,7 @@ igOverMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = initialState (mkStdGen 60)
 
 
 deadMouse :: (Float, Float) -> GameState -> GameState
-deadMouse l@(x, y) g@(GameState _ _ _ sc hs _) | inBox 0 (screenh * 0.5) l = initialState (mkStdGen 60)
+deadMouse l@(x, y) g@(GameState _ _ _ sc hs d) | inBox 0 (screenh * 0.5) l = initialState d hs
                      | inBox 0 0 l = g{state = GameOver, infoToShow = ShowHighScores, hScores = show sc : hs} --Zorg dat het ook echt saved LOLL
                      | inBox 0 (-screenh * 0.5) l = g{state = GameOver}
                      | otherwise = g
@@ -349,24 +349,29 @@ handleInputSpecial KeyRight (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy))
 handleInputSpecial KeySpace (InfoToShow b p@(Player (Point(x, y)) _ _) e bul) = InfoToShow b p e (PlayerBullet (Point (x + 40, y)) (Vector (5, 0)) : bul)
 handleInputSpecial _ i = i
 
-{-
-readWriteScores :: GameState -> IO GameState
-readWriteScores gstate@(GameState _ _ _ sc hs _)= do
-  let gstate2@(GameState _ _ _ sc2 hs2 _) = readScores gstate 
-  if(hs == hs2) then undefined
-  else undefined
-  
-  -}
-readWriteScores :: GameState -> IO GameState
-readWriteScores = readScores
 
-readScores :: GameState -> IO GameState
-readScores gstate = do
+
+readWriteScores :: GameState -> IO GameState
+readWriteScores gstate@(GameState _ _ _ _ hs _)= do
+  scores <- readScores 
+  let newHighScores = hs
+  if scores == newHighScores then return gstate
+  else length scores `seq`writeScore gstate
+
+
+--readWriteScores :: GameState -> IO GameState
+--readWriteScores = readScores
+
+readScores :: IO [String]
+readScores = do
     contents <- readFile "app/Scores.txt"
     let scores = lines contents
-    return $ gstate{hScores = scores}
+    let scores2 = filter (all isDigit) scores
+    return scores2
 
 writeScore :: GameState -> IO GameState
 writeScore gstate@(GameState i t s sc hs sg) = do
-  appendFile "Scores.txt" ( show sc ++ "\n")
+  writeFile "app/Scores.txt" (unlines hs)  --( show sc ++ "\n")
   return gstate
+
+  

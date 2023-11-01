@@ -1,7 +1,7 @@
 module Main where
 
 import Controller
-import Model (initialState, screenh, screenw )
+import Model (initialState, screenh, screenw,  )
 import View
 import Graphics.Gloss.Interface.IO.Game
     ( black, Display(InWindow), Color, playIO )
@@ -35,11 +35,16 @@ A function to step the world one iteration. It is passed the period of time (in 
 -}
 main :: IO ()
 main = do
+    
     x <- newStdGen
+    h <- readScores 
+    length h `seq` writeFile "app/Scores.txt" (unlines h)
+    
+    
     playIO window -- Or FullScreen
               backgroundColor  -- Background color
               fps              -- Frames per second
-              (initialState x)    -- Initial state
+              (initialState x h)    -- Initial state
               view             -- View function
               input            -- Event function
               step             -- Step function

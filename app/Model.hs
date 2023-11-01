@@ -40,7 +40,7 @@ data InfoToShow = InfoToShow{border :: Border, player :: Player, enemies :: [Ene
 
 
 numberOfSecsBetweenActions :: Float
-numberOfSecsBetweenActions = 0.3
+numberOfSecsBetweenActions = 1
 
 
 
@@ -74,5 +74,5 @@ borders = Border (screenh - 10) (-screenh + 10) --top y bottom y
 startEnemies :: [Enemy]
 startEnemies = [ ]
 
-initialState :: StdGen -> GameState
-initialState = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 [] --nog een random stdgen nodig
+initialState :: StdGen -> [String] -> GameState
+initialState s hs = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 hs s --nog een random stdgen nodig
