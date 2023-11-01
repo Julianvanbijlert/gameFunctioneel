@@ -72,7 +72,8 @@ borders :: Border
 borders = Border (screenh - 10) (-screenh + 10) --top y bottom y
 
 startEnemies :: [Enemy]
-startEnemies = [ ]
+startEnemies = [MotherShip (Point(0, 0)) (Vector(-1,0))  [Heart] 0,
+                Jet (Point(0, 60)) (Vector(-1,0))  [Heart] 0]
 
 initialState :: StdGen -> [String] -> GameState
 initialState s hs = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 hs s --nog een random stdgen nodig

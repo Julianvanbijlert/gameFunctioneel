@@ -47,13 +47,14 @@ checkState gstate@(GameState i t Dead sc _ _) = gstate
 
 collideFunction :: GameState -> GameState
 collideFunction gstate@(GameState(InfoToShow o p e b) t s sc hs sg) =
-   checkDead gstate{infoToShow = InfoToShow o p2 e4 b2}
+   checkDead gstate{infoToShow = InfoToShow o p2 e4 b3}
     where p0 = collideFunctionBoard p o
           (p1, e1, sc1) = collideFunctions p0 e sc
           (p2, b1, sc2) = collideFunctions p1 b sc1
           (e2, b2, sc3) = collideFunctionEnemy e1 b1 sc2
           e3 = filter (not.(`collides` o)) e2
           e4 = removeEnemies e3
+          b3 = removeBullets b2
 
 collideFunctionEnemy :: (Collides s a, Remove s, Num score) => [s] -> [a] -> score -> ([s], [a], score)
 collideFunctionEnemy e [] sc = (e, [], sc)
@@ -183,6 +184,10 @@ removeEnemies (x@(Jet p v [] c):xs)  = if c <50 then Jet p v [] (c+1) : removeEn
 removeEnemies (x@(MotherShip p v [] c):xs)  = if c < 50 then MotherShip p v [] (c+1) : removeEnemies xs else removeEnemies xs                               
 removeEnemies (x : xs) =  x: removeEnemies xs
 
+removeBullets :: [Bullet]->[Bullet]
+removeBullets = filter (not.f)
+        where f (PlayerBullet (Point(x,y))_) = x-3>screenw ||x+3<(-screenw)|| y+2<(-screenh) ||y-2>screenh
+              f (EnemyBullet (Point(x,y))_) = x-3>screenw ||x+3<(-screenw)|| y+2<(-screenh) ||y-2>screenh
 
 endGame :: GameState -> GameState
 endGame = undefined
@@ -209,8 +214,8 @@ normalize (Vector (x,y))= Vector (x / p, y / p)
           where p = sqrt (x*x + y*y)
 
 randomEnemy :: GameState-> (Enemy, StdGen)
-randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ sc _ sg) | sc > 50000 && i> 18= (MotherShip (Point p) v [Heart, Heart, Heart,Heart, Heart] 0, s1)
-                                                                                | sc > 30000 && i > 12 = (Jet (Point p) v [Heart,Heart, Heart] 0, s1)
+randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ sc _ sg) | sc > 30000 && i> 18= (MotherShip (Point p) v [Heart, Heart, Heart,Heart, Heart] 0, s1)
+                                                                                | sc > 15000 && i > 12 = (Jet (Point p) v [Heart,Heart, Heart] 0, s1)
                                                                                 | sc > 0 && i > 7  = (SpaceShip (Point p) v [Heart,Heart, Heart] 0, s1)
                                                                                 | otherwise = (Rock (Point p) v [Heart] 0, s1)
                                                                                     where (y1, s) = makeRandomCoordinate sg (-screenh + 10) (screenh - 10)
