@@ -12,7 +12,7 @@ import Model
       Bullet(..),
       Enemy(..),
       Player(..),
-      InfoToShow(InfoToShow, enemies, ShowHighScores),
+      InfoToShow(InfoToShow, enemies, player, ShowHighScores),
       GameState(GameState, elapsedTime, score, state, infoToShow, hScores), Heart (Heart),Border (Border), screenw, screenh,
       initialState
     )
@@ -216,8 +216,8 @@ normalize (Vector (x,y))= Vector (x / p, y / p)
 randomEnemy :: GameState-> (Enemy, StdGen)
 randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ sc _ sg) | sc > 30000 && i> 18= (MotherShip (Point p) v [Heart, Heart, Heart,Heart, Heart] 0, s1)
                                                                                 | sc > 15000 && i > 12 = (Jet (Point p) v [Heart,Heart, Heart] 0, s1)
-                                                                                | sc > 0 && i > 7  = (SpaceShip (Point p) v [Heart,Heart, Heart] 0, s1)
-                                                                                | otherwise = (Rock (Point p) v [Heart] 0, s1)
+                                                                                | sc > 0 && i > 7  = (SpaceShip (Point p) v [Heart] 0, s1)
+                                                                                | otherwise = (Rock (Point p) v [Heart,Heart, Heart] 0, s1)
                                                                                     where (y1, s) = makeRandomCoordinate sg (-screenh + 10) (screenh - 10)
                                                                                           (i, s1) = makeRandomCoordinate s 0 20
                                                                                           p@(a,b) = (screenw-10,y1)
@@ -281,8 +281,9 @@ inputKey e gstate = case state gstate of
 
 runInput :: Event -> GameState -> GameState
 runInput (EventKey (SpecialKey KeyEsc) Down _ _) gstate= gstate{state = Paused}
-runInput (EventKey (SpecialKey k) Down _ _) gstate@(GameState i e Running sc _ _) = gstate {infoToShow = handleInputSpecial k i}
-runInput (EventKey (Char c) Down _  _) gstate@(GameState i e s sc _ _) =            gstate { infoToShow = handleInput c i }
+runInput (EventKey (SpecialKey k) Down _ _) gstate@(GameState i _ _ _ _ _) = gstate {infoToShow = handleInputSpecial k i}
+runInput (EventKey (Char c) Down _  _) gstate@(GameState i _ _ _ _ _) =            gstate { infoToShow = handleInput c i }
+runInput (EventKey (MouseButton LeftButton) Down _ (x, y)) gstate@(GameState i _ _ _ _ _) = gstate{infoToShow = runMouse (x, y) i}
 runInput _ gstate@(GameState i e s sc _ _) = gstate
 
 pauseInput :: Event -> GameState -> GameState
@@ -297,6 +298,13 @@ gOverInput _ gstate = gstate
 deadInput :: Event -> GameState -> GameState
 deadInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = deadMouse (x, y) g
 deadInput _ gstate = gstate
+
+runMouse :: (Float, Float) -> InfoToShow -> InfoToShow
+runMouse l@(x1, y1) i@(InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = i{player = Player (getLoc (x,y) (x1, y1) (dx,dy)) (Vector(dx, dy)) h}
+
+getLoc ::(Float, Float) -> (Float, Float)  -> (Float, Float)  -> Model.Point
+getLoc (px, py) (mx, my) (dx, dy)  = Model.Point (px + nx * dx, py + ny * dy)
+                              where n@(Model.Vector (nx, ny)) = normalize (Vector(mx - px, my - py))
 
 pauseMouse :: (Float, Float) -> GameState -> GameState
 pauseMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = g{state = Running}
