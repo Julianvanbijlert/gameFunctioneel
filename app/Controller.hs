@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE InstanceSigs #-}
 module Controller where
   -- | This module defines how the state changes
   --   in response to time and user input
@@ -12,8 +13,8 @@ import Model
       Bullet(..),
       Enemy(..),
       Player(..),
-      InfoToShow(InfoToShow, enemies, player, ShowHighScores),
-      GameState(GameState, elapsedTime, score, state, infoToShow, hScores), Heart (Heart),Border (Border), screenw, screenh,
+      InfoToShow(InfoToShow, enemies, ShowHighScores, player),
+      GameState(GameState, elapsedTime, score, state, infoToShow, hScores, rndGen), Heart (Heart),Border (Border), screenw, screenh,
       initialState
     )
 
@@ -26,36 +27,35 @@ import System.Random
 import Graphics.Gloss.Data.Picture
 
 import Graphics.Gloss.Data.Color
+import Data.Maybe (catMaybes)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step secs gstate@(GameState i h s sc hs sg)
+step secs gstate@(GameState {rndGen = sg})
     | elapsedTime gstate + secs > numberOfSecsBetweenActions = --nog random toevoegen
-      readWriteScores . spawnEnemyOrPowerUp (fst j) .  shootBulletEs . checkState $ (GameState i h s sc hs (snd j)){ elapsedTime = 0}
+      readWriteScores . spawnEnemyOrPowerUp (fst j) .  shootBulletEs . checkState $ gstate{rndGen = snd j}{ elapsedTime = 0}
     | otherwise = -- Just update the elapsed time
       readWriteScores . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
   where
     j = makeRandomCoordinate sg 0 60
 
-
-
 checkState :: GameState -> GameState
-checkState gstate@(GameState i _ Running sc _ _) = collideFunction . moveEverything $ gstate {score = sc + 1 }
-checkState gstate@(GameState i t Paused sc _ _) = gstate
-checkState gstate@(GameState i t GameOver sc _ _) = gstate
-checkState gstate@(GameState i t Dead sc _ _) = gstate
+checkState gstate@(GameState {state = Running, score = sc}) = collideFunction . moveEverything $ gstate {score = sc + 1 }
+checkState gstate = gstate
 
+-- | Checks and handles the collections
 collideFunction :: GameState -> GameState
-collideFunction gstate@(GameState(InfoToShow o p e b) t s sc hs sg) =
-   checkDead gstate{infoToShow = InfoToShow o p2 e4 b3}
-    where p0 = collideFunctionBoard p o
-          (p1, e1, sc1) = collideFunctions p0 e sc
-          (p2, b1, sc2) = collideFunctions p1 b sc1
-          (e2, b2, sc3) = collideFunctionEnemy e1 b1 sc2
-          e3 = filter (not.(`collides` o)) e2
-          e4 = removeEnemies e3
-          b3 = removeBullets b2
+collideFunction gstate@(GameState {infoToShow = InfoToShow o p e b, score = sc}) =
+   checkDead gstate{infoToShow = InfoToShow o p2 e4 b3, score = sc3}
+    where p0 = collideFunctionBoard p o -- checks if player is out of the screen
+          (p1, e1, sc1) = collideFunctions p0 e sc -- checks if player is hit by a enemie
+          (p2, b1, sc2) = collideFunctions p1 b sc1 -- checks if player is hit by a bullet
+          (e2, b2, sc3) = collideFunctionEnemy e1 b1 sc2 -- checks if an enemie is hit by a bullet
+          e3 = filter (not.(`collides` o)) e2 -- removes enemies if enemie out of screen
+          e4 = removeEnemies e3 -- remove all enemies that died
+          b3 = removeBullets b2 -- removes all bullets out of screen
 
+-- | checks for every enemie if it collides and updates the enemy hearts and the score
 collideFunctionEnemy :: (Collides s a, Remove s, Num score) => [s] -> [a] -> score -> ([s], [a], score)
 collideFunctionEnemy e [] sc = (e, [], sc)
 collideFunctionEnemy [] b sc = ([], b, sc)
@@ -67,11 +67,11 @@ collideFunctionBoard p b | collides p b = destroy p
                          | otherwise = p
 
 moveEverything :: GameState -> GameState
-moveEverything (GameState (InfoToShow b p xs bs) t state sc hs sg) = GameState (InfoToShow b p enem bul) t state sc hs sg
+moveEverything gstate@(GameState {infoToShow = InfoToShow b p xs bs}) = gstate{infoToShow = InfoToShow b p enem bul}
                                                                 where enem = moveAllEnemies xs
                                                                       bul  = moveAllBullets bs
 checkDead :: GameState -> GameState
-checkDead gstate@(GameState (InfoToShow _ p _ _) _ Running _ _ _)  | isDead p = gstate{state = Dead}
+checkDead gstate@(GameState {infoToShow = InfoToShow _ p _ _, state = running})  | isDead p = gstate{state = Dead}
                                                                  | otherwise = gstate
 
 
@@ -181,7 +181,7 @@ removeEnemies [] = []
 removeEnemies (x@(Rock p v [] c):xs) = if c < 50 then Rock p v [] (c+1) : removeEnemies xs else removeEnemies xs
 removeEnemies (x@(SpaceShip p v [] c):xs) = if c < 50 then SpaceShip p v [] (c+1) : removeEnemies xs else removeEnemies xs
 removeEnemies (x@(Jet p v [] c):xs)  = if c <50 then Jet p v [] (c+1) : removeEnemies xs else removeEnemies xs
-removeEnemies (x@(MotherShip p v [] c):xs)  = if c < 50 then MotherShip p v [] (c+1) : removeEnemies xs else removeEnemies xs                               
+removeEnemies (x@(MotherShip p v [] c):xs)  = if c < 50 then MotherShip p v [] (c+1) : removeEnemies xs else removeEnemies xs
 removeEnemies (x : xs) =  x: removeEnemies xs
 
 removeBullets :: [Bullet]->[Bullet]
@@ -189,19 +189,9 @@ removeBullets = filter (not.f)
         where f (PlayerBullet (Point(x,y))_) = x-3>screenw ||x+3<(-screenw)|| y+2<(-screenh) ||y-2>screenh
               f (EnemyBullet (Point(x,y))_) = x-3>screenw ||x+3<(-screenw)|| y+2<(-screenh) ||y-2>screenh
 
-endGame :: GameState -> GameState
-endGame = undefined
-
-pauseGame :: GameState -> GameState
-pauseGame = undefined
-
-spawnPowerup :: GameState -> GameState
-spawnPowerup = undefined
-
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
-
-spawnEnemyOrPowerUp i g@(GameState (InfoToShow b p e h) k Running m hs sg) | (m>30000 && i >45) ||(m > 10000 && i > 50) || i > 55 = GameState (InfoToShow b p (fst (randomEnemy g) : e) h) k Running m hs (snd (randomEnemy g))
-                                                                | otherwise = g{infoToShow = InfoToShow b p e h} --nog powerup toevoegen
+spawnEnemyOrPowerUp i g@(GameState {infoToShow = InfoToShow b p e h, state= Running, score = m, rndGen = sg}) | (m>30000 && i >45) ||(m > 10000 && i > 50) || i > 55 = g{infoToShow = InfoToShow b p (fst (randomEnemy g) : e) h, rndGen = snd (randomEnemy g)}
+                                                                | otherwise = g--nog powerup toevoegen                                        
 spawnEnemyOrPowerUp i g = g
 
 makeRandomCoordinate :: StdGen -> Float -> Float -> (Float, StdGen)
@@ -214,7 +204,7 @@ normalize (Vector (x,y))= Vector (x / p, y / p)
           where p = sqrt (x*x + y*y)
 
 randomEnemy :: GameState-> (Enemy, StdGen)
-randomEnemy g@(GameState (InfoToShow _ (Player(Point(x,y)) _ _) _ _) _ _ sc _ sg) | sc > 30000 && i> 18= (MotherShip (Point p) v [Heart, Heart, Heart,Heart, Heart] 0, s1)
+randomEnemy g@(GameState {infoToShow = InfoToShow _ (Player(Point(x,y)) _ _) _ _, score = sc, rndGen = sg}) | sc > 30000 && i> 18= (MotherShip (Point p) v [Heart, Heart, Heart,Heart, Heart] 0, s1)
                                                                                 | sc > 15000 && i > 12 = (Jet (Point p) v [Heart,Heart, Heart] 0, s1)
                                                                                 | sc > 0 && i > 7  = (SpaceShip (Point p) v [Heart] 0, s1)
                                                                                 | otherwise = (Rock (Point p) v [Heart,Heart, Heart] 0, s1)
@@ -229,30 +219,28 @@ randomPowerup :: Powerup
 randomPowerup = undefined
 
 shootBulletEs :: GameState -> GameState
-shootBulletEs g@(GameState i _ _ _ _ _) = g{infoToShow = shootBulletE [] i}
+shootBulletEs g@(GameState {infoToShow = InfoToShow b p e bul}) = g{infoToShow = InfoToShow b p e (catMaybes (concatMap (shootBulletE p) e)++bul)}
 
---doet nog niets met random
-shootBulletE :: [Enemy] -> InfoToShow -> InfoToShow
-shootBulletE le (InfoToShow b (Player (Point(x,y)) v h) (e@(Rock {}): es) bul)  =
-      shootBulletE (e: le) (InfoToShow b (Player (Point (x,y)) v h) es bul)
-shootBulletE le (InfoToShow b (Player (Point(x,y)) v h) (e@(SpaceShip _ _ [] _): es) bul)  =
-      shootBulletE (e: le) (InfoToShow b (Player (Point (x,y)) v h) es bul)
-shootBulletE le (InfoToShow b (Player (Point(x,y)) v h) (e@(Jet _ _ [] _): es) bul)  =
-      shootBulletE (e: le) (InfoToShow b (Player (Point (x,y)) v h) es bul)
-shootBulletE le (InfoToShow b (Player (Point(x,y)) v h) (e@(MotherShip _ _ [] _): es) bul)  =
-      shootBulletE (e: le) (InfoToShow b (Player (Point (x,y)) v h) es bul)
-shootBulletE le (InfoToShow b (Player (Point(x,y)) v h) (e@(SpaceShip (Point(xt, yt)) _ _ _): es) bul) =
-      shootBulletE (e : le) (InfoToShow b (Player (Point (x,y)) v h) es (EnemyBullet (Point (xt - 20, yt) ) (Vector (-1, 0)) : bul))
-shootBulletE le (InfoToShow b (Player (Point(x,y)) v h) (e@(Jet (Point(xt, yt)) _ _ _): es) bul) =
-      shootBulletE (e : le) (InfoToShow b (Player (Point (x,y)) v h) es (EnemyBullet (Point (xt-30, yt)) (normalize (Vector (x-(xt-30), y-yt))) : bul))
-shootBulletE le (InfoToShow b (Player (Point(x,y)) vt h) (e@(MotherShip (Point(xt, yt)) _ _ _): es) bul) =
-      shootBulletE (e : le) (InfoToShow b (Player (Point (x,y)) vt h) es ([EnemyBullet (Point (xt-30, yt)) (normalize (Vector v)), EnemyBullet (Point (xt-30, yt)) (normalize (Vector v1)),EnemyBullet (Point (xt-30, yt)) (normalize (Vector v2))] ++ bul))
+shootBulletE :: Player -> Enemy -> [Maybe Bullet]
+shootBulletE (Player (Point(x,y)) v h) e@(Rock {})  =
+      [Nothing]
+shootBulletE (Player (Point(x,y)) v h) e@(SpaceShip _ _ [] _)  =
+      [Nothing]
+shootBulletE (Player (Point(x,y)) v h) e@(Jet _ _ [] _)  =
+      [Nothing]
+shootBulletE (Player (Point(x,y)) v h) e@(MotherShip _ _ [] _)  =
+      [Nothing]
+shootBulletE (Player (Point(x,y)) v h) e@(SpaceShip (Point(xt, yt)) _ _ _) =
+      [Just (EnemyBullet (Point (xt - 20, yt) ) (Vector (-1, 0)))]
+shootBulletE (Player (Point(x,y)) v h) e@(Jet (Point(xt, yt)) _ _ _) =
+      [Just (EnemyBullet (Point (xt-30, yt)) (normalize (Vector (x-(xt-30), y-yt))))]
+shootBulletE (Player (Point(x,y)) v h) e@(MotherShip (Point(xt, yt)) _ _ _) =
+      [Just (EnemyBullet (Point (xt-30, yt)) (normalize (Vector v)))
+            , Just (EnemyBullet (Point (xt-30, yt)) (normalize (Vector v1)))
+            , Just (EnemyBullet (Point (xt-30, yt)) (normalize (Vector v2)))]
       where v@(xv, yv) = (x-(xt-30), y-yt)
             v1@(xv1, yv1) = ((x+20) -(xt-30), (y+20) - yt)
             v2@(xv2, yv2) = ((x-20) -(xt-30), (y-20) - yt)
-shootBulletE le i@(InfoToShow b (Player (Point(x,y)) v _) [] bul) = i{enemies = le}
-shootBulletE le i = i
-
 
 --if spaceship hits a wall it will go back in the screen, if rock does this it breaks
 hittWall :: Enemy -> Enemy
@@ -337,8 +325,6 @@ deadMouse l@(x, y) g@(GameState _ _ _ sc hs d) | inBox 0 (screenh * 0.5) l = ini
                      | otherwise = g
 
 
-                   
-
 inBox :: Float -> Float -> (Float, Float) -> Bool
 inBox dx dy (x, y) = x > dx - bw && x < bw + dx &&
                      y > dy - bh && y < bh + dy
@@ -366,7 +352,7 @@ handleInputSpecial _ i = i
 
 readWriteScores :: GameState -> IO GameState
 readWriteScores gstate@(GameState _ _ _ _ hs _)= do
-  scores <- readScores 
+  scores <- readScores
   let newHighScores = hs
   if scores == newHighScores then return gstate
   else length scores `seq`writeScore gstate
@@ -387,4 +373,3 @@ writeScore gstate@(GameState i t s sc hs sg) = do
   writeFile "app/Scores.txt" (unlines hs)  --( show sc ++ "\n")
   return gstate
 
-  

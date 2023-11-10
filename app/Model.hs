@@ -27,16 +27,17 @@ data Powerup = FastShot | DoubleBullet | Extralife
 data State = Running | Paused | GameOver | Dead
 data Game = Game {}
 
-data InfoToShow = InfoToShow{border :: Border, player :: Player, enemies :: [Enemy], bullets :: [Bullet]}
+data InfoToShow = InfoToShow{
+                      border :: Border
+                    , player :: Player
+                    , enemies :: [Enemy]
+                    , bullets :: [Bullet]
+                    }
 
                 | ShowNothing
                 | ShowANumber Int
                 | ShowAChar   Char
                 | ShowHighScores
-              --  | ShowBorder Border
-              --  | ShowPlayer Player
-              --  | ShowEnemy Enemy
-              --  | ShowListEnemy [Enemy]
 
 
 numberOfSecsBetweenActions :: Float
