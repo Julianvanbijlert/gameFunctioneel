@@ -51,7 +51,7 @@ main = do
 -- main = play window backgroundColor fps initialGame gameAsPicture transformGame (\\_ ->id)
 
 window :: Display
-window = InWindow "Shoot m up" (round Model.screenw * 2, round Model.screenh * 2) (10, 10)
+window = InWindow "Shoot m up" (round Model.screenw * 2, round Model.screenh * 2) (10, 10) -- TODO waarvoor staat de 10,10
 
 backgroundColor :: Color
 backgroundColor = black

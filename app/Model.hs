@@ -5,15 +5,31 @@ import System.Random
 newtype Point = Point (Float, Float)
 newtype Vector = Vector (Float, Float)
 
-data Player = Player       Point Vector [Heart]
-data Enemy =  SpaceShip    Point Vector [Heart] Float| --can also shoot
-              Rock         Point Vector [Heart] Float|
-              Jet          Point Vector [Heart] Float|
-              MotherShip   Point Vector [Heart] Float
-              
+data Player = Player       { pos :: Point
+                           , dir :: Vector
+                           , lives :: [Heart] }
+data Enemy =  SpaceShip    { enemyPos :: Point
+                           , enemyDir :: Vector
+                           , enemyLives :: [Heart]
+                           , frame :: Float }| --can also shoot
+              Rock         { enemyPos :: Point
+                           , enemyDir :: Vector
+                           , enemyLives :: [Heart]
+                           , frame :: Float }|
+              Jet          { enemyPos :: Point
+                           , enemyDir :: Vector
+                           , enemyLives :: [Heart]
+                           , frame :: Float }|
+              MotherShip   { enemyPos :: Point
+                           , enemyDir :: Vector
+                           , enemyLives :: [Heart]
+                           , frame :: Float }
 
-data Bullet = EnemyBullet  Point Vector |
-              PlayerBullet Point Vector
+
+data Bullet = EnemyBullet  { bulletPos :: Point
+                           , bulletDir :: Vector }|
+              PlayerBullet { bulletPos :: Point
+                           , bulletDir :: Vector }
 
 data Heart =  Heart |
               Shield
@@ -27,17 +43,14 @@ data Powerup = FastShot | DoubleBullet | Extralife
 data State = Running | Paused | GameOver | Dead
 data Game = Game {}
 
-data InfoToShow = InfoToShow{
-                      border :: Border
-                    , player :: Player
-                    , enemies :: [Enemy]
-                    , bullets :: [Bullet]
-                    }
-
-                | ShowNothing
-                | ShowANumber Int
-                | ShowAChar   Char
-                | ShowHighScores
+data InfoToShow = InfoToShow { border :: Border
+                             , player :: Player
+                             , enemies :: [Enemy]
+                             , bullets :: [Bullet] }
+                            | ShowNothing
+                            | ShowANumber Int
+                            | ShowAChar   Char
+                            | ShowHighScores
 
 
 numberOfSecsBetweenActions :: Float
@@ -66,15 +79,20 @@ screenw = screenWidths / 2
 screenh :: Float
 screenh = screenHeights / 2
 
+beginPoint :: Point
+beginPoint = Point (-300, 0)
+
+playerVector :: Vector
+playerVector = Vector (10, 10)
+
 initialPlayer :: Player
-initialPlayer = Player (Point(-300, 0)) (Vector(10, 10)) [Shield, Heart, Heart, Heart]
+initialPlayer = Player beginPoint playerVector [Shield, Heart, Heart, Heart]
 
 borders :: Border
-borders = Border (screenh - 10) (-screenh + 10) --top y bottom y
+borders = let distanceTillBorder = 10 in Border (screenh - distanceTillBorder) (-screenh + distanceTillBorder) --top y bottom y
 
 startEnemies :: [Enemy]
-startEnemies = [MotherShip (Point(0, 0)) (Vector(-1,0))  [Heart] 0,
-                Jet (Point(0, 60)) (Vector(-1,0))  [Heart] 0]
+startEnemies = []
 
 initialState :: StdGen -> [String] -> GameState
 initialState s hs = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 hs s --nog een random stdgen nodig
