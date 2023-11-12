@@ -33,3 +33,5 @@
     the player then only moves/shoots one time
 - In model there is a list of enemies commented, if you put that in start enemies, all the enemies appear at the beginning
   this may be needed to easily check out all the enemies since the tougher enemies appear later in the game
+- You have three hearts and a shield, shown topleft of the screen
+- If you touch the sides of the border or the screen its game over

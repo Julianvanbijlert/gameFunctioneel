@@ -38,61 +38,51 @@ viewPure gstate@(GameState {infoToShow = i, score = sc, hScores =  hs}) = case s
   Dead     -> dead gstate
 
 showInfoToShow :: InfoToShow -> Int -> Picture
-showInfoToShow (InfoToShow {border = b, player = p, enemies = xs, bullets = bs}) sc = Pictures [showBorder b
-                                                                                               , showPlayer p
-                                                                                               , showListEnemies xs
-                                                                                               , showBullets bs
-                                                                                               , showScore sc
+showInfoToShow (InfoToShow {border = b, player = p, enemies = xs, bullets = bs}) sc = Pictures [showObject b
+                                                                                               , showObject p
+                                                                                               , showObjects xs
+                                                                                               , showObjects bs
+                                                                                               , showObject sc
                                                                                                , showLives p]
 
-showPlayer :: Player -> Picture
-showPlayer (Player {pos = (Point(x, y))}) = let (xSize, ySize) = (30, 10) in color green (Polygon [(x, y - ySize), (x, y + ySize), (x + xSize, y)] ) --triangle
-
-showListEnemies :: [Enemy] -> Picture
-showListEnemies [] = blank
-showListEnemies e = Pictures $ map showEnemy e
-
-showEnemy :: Enemy -> Picture
+class ShowObject a where
+  showObject :: a -> Picture
+  showObjects :: [a] -> Picture
+instance ShowObject Player where
+  showObject (Player {pos = (Point(x, y))}) = let (xSize, ySize) = (30, 10) in color green (Polygon [(x, y - ySize), (x, y + ySize), (x + xSize, y)] ) --triangle
+  showObjects p = blank
+instance ShowObject Enemy where 
 -- if the enemy is death it makes a explosion
-showEnemy e@(Rock {enemyLives = []})               = showExplosion e
-showEnemy e@(SpaceShip {enemyLives = []})          = showExplosion e
-showEnemy e@(Jet {enemyLives = []})                = showExplosion e
-showEnemy e@(MotherShip {enemyLives = []})         = showExplosion e
-showEnemy  (Rock {enemyPos = (Point(x, y))})       = let (xSize, ySize) = (17, 10) in color white (Polygon [(x, y+(ySize*2)), (x+xSize, y+ySize), (x+xSize, y-ySize), (x, y-(ySize*2)), (x-xSize, y-ySize), (x-xSize, y+ySize)])
-showEnemy  (SpaceShip {enemyPos = (Point(x, y))})  = let size = 10 in color red (Polygon [(x-size, y-size),(x+size, y+size), (x-size, y+size), (x+size, y-size)])  --square
-showEnemy  (Jet {enemyPos = (Point(x, y))})        = let size = 7 in color blue (Polygon [(x-size, y-size),(x+size, y+size), (x-size, y+size), (x+size, y-size)])  --square
-showEnemy  (MotherShip {enemyPos = (Point(x, y))}) = let size = 20 in color green (Polygon [(x-size, y-size),(x+size, y+size), (x-size, y+size), (x+size, y-size)]) --square
-
-showExplosion :: Enemy -> Picture
-showExplosion  (Rock {enemyPos = p, frame = h})       = let (xSize, ySize) = (9,17) in makeExplosion p h xSize ySize
-showExplosion  (SpaceShip {enemyPos = p, frame = h})  = let (xSize, ySize) = (4,10) in makeExplosion p h xSize ySize
-showExplosion  (Jet {enemyPos = p, frame = h})        = let (xSize, ySize) = (2,7) in makeExplosion p h xSize ySize
-showExplosion  (MotherShip {enemyPos = p, frame = h}) = let (xSize, ySize) = (9,20) in makeExplosion p h xSize ySize
+  showObject  (Rock {enemyPos = p, enemyLives = [], frame = h})       = let (xSize, ySize) = (9,17) in makeExplosion p h xSize ySize
+  showObject  (SpaceShip {enemyPos = p, enemyLives = [], frame = h})  = let (xSize, ySize) = (4,10) in makeExplosion p h xSize ySize
+  showObject  (Jet {enemyPos = p, enemyLives = [], frame = h})        = let (xSize, ySize) = (2,7) in makeExplosion p h xSize ySize
+  showObject  (MotherShip {enemyPos = p, enemyLives = [], frame = h}) = let (xSize, ySize) = (9,20) in makeExplosion p h xSize ySize
+  showObject  (Rock {enemyPos = (Point(x, y))})       = let (xSize, ySize) = (17, 10) in color white (Polygon [(x, y+(ySize*2)), (x+xSize, y+ySize), (x+xSize, y-ySize), (x, y-(ySize*2)), (x-xSize, y-ySize), (x-xSize, y+ySize)])
+  showObject  (SpaceShip {enemyPos = (Point(x, y))})  = let size = 10 in color red (Polygon [(x-size, y-size),(x+size, y+size), (x-size, y+size), (x+size, y-size)])  --square
+  showObject  (Jet {enemyPos = (Point(x, y))})        = let size = 7 in color blue (Polygon [(x-size, y-size),(x+size, y+size), (x-size, y+size), (x+size, y-size)])  --square
+  showObject  (MotherShip {enemyPos = (Point(x, y))}) = let size = 20 in color green (Polygon [(x-size, y-size),(x+size, y+size), (x-size, y+size), (x+size, y-size)]) --square
+  showObjects [] = blank
+  showObjects e = Pictures $ map showObject e
+instance ShowObject Bullet where 
+  showObject (EnemyBullet (Point(x, y)) _)  = let (xSize, ySize) = (2,1) in color yellow (Polygon [(x - xSize, y -ySize),(x + xSize, y - ySize), (x + xSize, y + ySize), (x - xSize, y + ySize)])
+  showObject (PlayerBullet (Point(x, y)) _) = let (xSize, ySize) = (2,1) in color white (Polygon [(x - xSize, y -ySize),(x + xSize, y - ySize), (x + xSize, y + ySize), (x - xSize, y + ySize)])
+  showObjects [] = blank
+  showObjects b = Pictures $ map showObject b
+instance ShowObject Border where
+  showObject (Border ytop ybot) = pictures [ color green (Polygon [(sw, sh), (sw, ytop), (-sw , ytop), (-sw, sh) ]),
+                                           color green (Polygon [(sw, -sh), (sw, ybot), (-sw , ybot), (-sw, -sh) ]) ]
+                                            where sw = Model.screenw  --helft van screenwidth
+                                                  sh = Model.screenh  --helft van screenheight
+  showObjects b = blank
+instance ShowObject Int where
+  showObject i = color white (Translate (-50) (Model.screenh - 50) (Scale 0.3 0.3 (text (show i))))
+  showObjects sc = blank
 
 makeExplosion :: Point -> Float -> Float -> Float -> Picture
 -- makes an bigger explosion based on how many frames the enemy has been death
 makeExplosion (Point (x,y)) frame xSize ySize = Pictures [color orange (Polygon [(x-xSize-sizePerFrame, y-ySize-sizePerFrame), (x-xSize-sizePerFrame, y+ySize+sizePerFrame), (x+ySize+sizePerFrame, y)])
                                                           , color orange (Polygon [(x+xSize+sizePerFrame, y-ySize-sizePerFrame), (x+xSize+sizePerFrame, y+ySize+sizePerFrame), (x-ySize-sizePerFrame, y)])]
                 where sizePerFrame = let growthSize = 10 in frame/growthSize
-
-showBullets :: [Bullet] -> Picture
-showBullets []      = blank
-showBullets (x: xs) = Pictures [showBullet x, showBullets xs]
-
-showBullet :: Bullet -> Picture
-showBullet (EnemyBullet (Point(x, y)) _)  = let (xSize, ySize) = (2,1) in color yellow (Polygon [(x - xSize, y -ySize),(x + xSize, y - ySize), (x + xSize, y + ySize), (x - xSize, y + ySize)])
-showBullet (PlayerBullet (Point(x, y)) _) = let (xSize, ySize) = (2,1) in color white (Polygon [(x - xSize, y -ySize),(x + xSize, y - ySize), (x + xSize, y + ySize), (x - xSize, y + ySize)])
-
-showBorder :: Border -> Picture
-showBorder (Border ytop ybot) = pictures [ color green (Polygon [(sw, sh), (sw, ytop), (-sw , ytop), (-sw, sh) ]),
-                                           color green (Polygon [(sw, -sh), (sw, ybot), (-sw , ybot), (-sw, -sh) ]) ]
-                                            where sw = Model.screenw  --helft van screenwidth
-                                                  sh = Model.screenh  --helft van screenheight
-
-showScore :: Int -> Picture
-showScore i = color white (Translate (-distance) (Model.screenh - distance) (Scale scaler scaler (text (show i))))
-            where distance = 50
-                  scaler = 0.3
 
 --we made this player instead of putting it in the game in case we wanted to add multiplayer
 showLives :: Player -> Picture
