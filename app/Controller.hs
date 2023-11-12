@@ -5,12 +5,12 @@ module Controller where
   --   in response to time and user input
 
 import Model
-
+import Data.Ord (comparing)
 import Data.Char (isDigit)
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
-
+import Data.List
 import Graphics.Gloss.Data.Picture
 
 import Graphics.Gloss.Data.Color
@@ -427,19 +427,26 @@ readWriteScores :: GameState -> IO GameState
 readWriteScores gstate@(GameState {hScores = hs})= do
   scores <- readScores
   if scores == hs then return gstate
-  else length scores `seq`writeScore gstate
+  else length scores `seq` writeScore gstate
 
 
-
+--checks the code for words integers and returns a list of those
 readScores :: IO [String]
 readScores = do
     contents <- readFile "app/Scores.txt"
     let scores = lines contents
-    let scores2 = filter (all isDigit) scores
-    return scores2
+    let integerScores = filter (all isDigit) scores
+    let sortedScores = orderList integerScores
+    return sortedScores
 
+--replaces document with the current score
 writeScore :: GameState -> IO GameState
 writeScore gstate@(GameState {hScores = hs}) = do
   writeFile "app/Scores.txt" (unlines hs) 
   return gstate
 
+orderList :: [String] -> [String]
+orderList = sortBy compareTwo
+
+compareTwo :: String -> String -> Ordering
+compareTwo a b = compare (read b :: Int) (read a :: Int)
