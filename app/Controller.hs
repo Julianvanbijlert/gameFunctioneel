@@ -378,7 +378,7 @@ igOverMouse l@(Point(x, y)) g@(GameState {hScores = hs, rndGen =  d}) | inBox 0 
 -- | if the state is death then this mouse is used
 deadMouse :: Model.Point -> GameState -> GameState
 deadMouse l@(Point(x, y)) g@(GameState {score = sc, hScores = hs, rndGen =  d}) | inBox 0 (screenh * 0.5) l = initialState d hs
-                     | inBox 0 0 l = g{state = GameOver, infoToShow = ShowHighScores, hScores = show sc : hs} --Zorg dat het ook echt saved
+                     | inBox 0 0 l = g{state = GameOver, infoToShow = ShowHighScores, hScores = orderList (show sc : hs)} --Zorg dat het ook echt saved
                      | inBox 0 (-screenh * 0.5) l = g{state = GameOver}
                      | otherwise = g
 
@@ -417,7 +417,7 @@ readWriteScores :: GameState -> IO GameState
 readWriteScores gstate@(GameState {hScores = hs})= do
   scores <- readScores
   if scores == hs then return gstate
-  else length scores `seq` writeScore gstate
+  else writeScore gstate
 
 
 -- | checks the code for words integers and returns a list of those
@@ -432,7 +432,7 @@ readScores = do
 -- | replaces document with the current score
 writeScore :: GameState -> IO GameState
 writeScore gstate@(GameState {hScores = hs}) = do
-  writeFile "app/Scores.txt" (unlines hs) 
+  writeFile "app/Scores.txt" (unlines (orderList hs)) 
   return gstate
 
 orderList :: [String] -> [String]
