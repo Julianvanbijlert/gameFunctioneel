@@ -1,5 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE InstanceSigs #-}
+
 module Controller where
   -- | This module defines how the state changes
   --   in response to time and user input
@@ -31,13 +31,13 @@ import Data.Maybe (catMaybes)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step secs gstate@(GameState {rndGen = sg})
+step secs gstate@(GameState {infoToShow = InfoToShow {enemies = e}, rndGen = sg})
     | elapsedTime gstate + secs > numberOfSecsBetweenActions = --nog random toevoegen
       readWriteScores . spawnEnemyOrPowerUp (fst j) .  shootBulletEs . checkState $ gstate{rndGen = snd j}{ elapsedTime = 0}
     | otherwise = -- Just update the elapsed time
       readWriteScores . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
   where
-    j = let (minRange, maxRange) = (0,60) in makeRandomCoordinate sg minRange maxRange --makes a random number to decide if a enemy should be spawned
+    j = let (minRange, maxRange) = (0,60) in if null e then (maxRange, sg) else makeRandomCoordinate sg minRange maxRange --makes a random number to decide if a enemy should be spawned
 
 checkState :: GameState -> GameState
 checkState gstate@(GameState {state = Running, score = sc}) = collideFunction . moveEverything $ gstate {score = sc + 1 }
@@ -191,7 +191,7 @@ removeBullets = filter (not.f)
               f (EnemyBullet {bulletPos = (Point(x,y))}) = let (xSize, ySize) = (3,2) in x-xSize>screenw ||x+xSize<(-screenw)|| y+ySize<(-screenh) ||y-ySize>screenh
 
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
-spawnEnemyOrPowerUp i g@(GameState {infoToShow = InfoToShow b p e h, state= Running, score = m, rndGen = sg}) | let (highestScore, lowerLimit, mediumScore, middleLimit, highestLimit) = (30000, 45, 1000, 50, 55) 
+spawnEnemyOrPowerUp i g@(GameState {infoToShow = InfoToShow b p e h, state= Running, score = m, rndGen = sg}) | let (highestScore, lowerLimit, mediumScore, middleLimit, highestLimit) = (30000, 45, 1000, 50, 55)
                                                                                                                  in (m>highestScore && i >lowerLimit) ||(m > mediumScore && i > middleLimit) || i > highestLimit
                                                                                                                   = g{infoToShow = InfoToShow b p (fst (randomEnemy g) : e) h, rndGen = snd (randomEnemy g)}
                                                                                                               | otherwise = g--nog powerup toevoegen                                        
@@ -239,7 +239,7 @@ shootBulletE _ (SpaceShip {enemyPos = (Point(xt, yt))}) = let spawnDistance = 20
       [Just (EnemyBullet (Point (xt - spawnDistance, yt) ) (Vector (-1, 0)))]
 shootBulletE (Player {pos = (Point(x,y))}) (Jet {enemyPos = (Point(xt, yt))}) = let spawnDistance = 30 in
       [Just (EnemyBullet (Point (xt-spawnDistance, yt)) (normalize (Vector (x-(xt-spawnDistance), y-yt))))]
-shootBulletE (Player {pos = (Point(x,y))}) (MotherShip {enemyPos = (Point(xt, yt))}) = 
+shootBulletE (Player {pos = (Point(x,y))}) (MotherShip {enemyPos = (Point(xt, yt))}) =
       [Just (EnemyBullet (Point (xt-spawnDistanceX, yt)) (normalize (Vector v)))
             , Just (EnemyBullet (Point (xt-spawnDistanceX, yt)) (normalize (Vector v1)))
             , Just (EnemyBullet (Point (xt-spawnDistanceX, yt)) (normalize (Vector v2)))]
