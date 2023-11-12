@@ -1,6 +1,6 @@
 # Shoot 'em up
 
-#### By: Frederique van Rijen (0695076) & Julian van Bijlert
+#### By: Frederique van Rijen (0695076) & Julian van Bijlert (2557576)
 
 ## Controls
 
