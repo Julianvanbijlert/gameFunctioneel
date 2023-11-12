@@ -28,6 +28,13 @@
                                  - The code for viewing the high scores are at the end of the view file
                                  - You can save the highscore after you die and you can see the high score by going to the menu
 
+## Optional requirements
+  Different enemies: - In the model.hs the different data types of enemies is listed
+                     - In view.hs the enemies are drawn in different ways
+                     - In controller.hs the movement and the shooting of the enemies differ 
+  Mouse Input: - You can click on the screen while its running and the spaceship will move there
+               - In the menu and pause you can click on the different options
+
 ## Notes
 - Holding down the keys a,s,d,w and spacebar does not mean the player keeps moving or keeps on shooting,
     the player then only moves/shoots one time

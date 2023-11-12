@@ -313,11 +313,7 @@ shootBulletE (Player {pos = (Point(x,y))}) (MotherShip {enemyPos = (Point(xt, yt
             v1@(xv1, yv1) = ((x+degreesRotation) -(xt-spawnDistanceX), (y+degreesRotation) - yt)
             v2@(xv2, yv2) = ((x-degreesRotation) -(xt-spawnDistanceX), (y-degreesRotation) - yt)
 
-<<<<<<< HEAD
-
 -- | Function that handles inputs and gives them to the right function          
-=======
->>>>>>> edbe47288425488f4d775b07e0318adab6800331
 inputKey :: Event -> GameState -> GameState
 inputKey e gstate = case state gstate of
             Running -> runInput e gstate
@@ -325,8 +321,8 @@ inputKey e gstate = case state gstate of
             GameOver -> gOverInput e gstate
             Dead -> deadInput e gstate
 
---first check input on escape to pause the game. This is because specialinputs already get handled 
---and we want to separate this one.             
+-- | first check input on escape to pause the game. This is because specialinputs already get handled 
+-- | and we want to separate this one.             
 runInput :: Event -> GameState -> GameState
 runInput (EventKey (SpecialKey KeyEsc) Down _ _) gstate= gstate{state = Paused}
 runInput (EventKey (SpecialKey k) Down _ _) gstate@(GameState {infoToShow = i}) = gstate {infoToShow = handleInputSpecial k i}
@@ -334,52 +330,46 @@ runInput (EventKey (Char c) Down _  _) gstate@(GameState {infoToShow = i}) = gst
 runInput (EventKey (MouseButton LeftButton) Down _ (x, y)) gstate@(GameState {infoToShow = i}) = gstate{infoToShow = runMouse (Point(x, y)) i}
 runInput _ gstate = gstate
 
---if esc, change state to running again. if mouse input do the mouseinput function
+-- | if esc, change state to running again. if mouse input do the mouseinput function
 pauseInput :: Event -> GameState -> GameState
 pauseInput (EventKey (SpecialKey KeyEsc) Down _ _) gstate = gstate{state = Running}
 pauseInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = pauseMouse (Point(x, y)) g
 pauseInput _ gstate = gstate
 
---input for game over
+-- | input for game over
 gOverInput :: Event -> GameState -> GameState
 gOverInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = gOverMouse (Point(x, y)) g
 gOverInput _ gstate = gstate
 
---input for dead
+-- | input for dead
 deadInput :: Event -> GameState -> GameState
 deadInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = deadMouse (Point(x, y)) g
 deadInput _ gstate = gstate
---input for running mouse, you can change position of player with mouse
+-- | input for running mouse, you can change position of player with mouse
 runMouse :: Model.Point -> InfoToShow -> InfoToShow
 runMouse l@(Point(x1, y1)) i@(InfoToShow {player = (Player {pos = (Point(x, y)), dir = (Vector(dx, dy)), lives = h}) }) = i{player = Player (getLoc (x,y) (x1, y1) (dx,dy)) (Vector (dx, dy)) h}
 
---helper function for getting new location of player
+-- | helper function for getting new location of player
 getLoc ::(Float, Float) -> (Float, Float)  -> (Float, Float)  -> Model.Point
 getLoc (px, py) (mx, my) (dx, dy)  = Model.Point (px + nx * dx, py + ny * dy)
                               where n@(Model.Vector (nx, ny)) = normalize (Vector (mx - px, my - py))
 
---checks if pressed in two boxes, one for continue and one for exit
+-- | checks if pressed in two boxes, one for continue and one for exit
 pauseMouse :: Model.Point -> GameState -> GameState
 pauseMouse l@(Point(x, y)) g | inBox 0 (screenh * 0.5) l = g{state = Running}
                       | inBox 0 (-screenh * 0.5) l = g{state = GameOver}
                       | otherwise = g
---gameOver mouse checks the infotoshow and redirects to correct function
+
+-- | gameOver mouse checks the infotoshow and redirects to correct function
 gOverMouse :: Model.Point -> GameState -> GameState
 gOverMouse l@(Point(x, y)) g = case infoToShow g of
   InfoToShow b p xs bs -> igOverMouse l g
   ShowHighScores -> hsgOverMouse l g
 
---shows highscores 
-hsgOverMouse ::Model.Point -> GameState -> GameState
-<<<<<<< HEAD
-hsgOverMouse l@(Point(x, y)) g@(GameState _ _ _ _ hs d) | inBox 0 (-screenh * 0.6) l = (initialState d hs){state = GameOver}
-                                                    | otherwise = g
 --shows the game over box
-=======
 hsgOverMouse l@(Point(x, y)) g@(GameState {hScores = hs, rndGen =  d}) | inBox 0 (-screenh * 0.6) l = (initialState d hs){state = GameOver}
                                                                        | otherwise = g
 
->>>>>>> edbe47288425488f4d775b07e0318adab6800331
 igOverMouse :: Model.Point -> GameState -> GameState
 igOverMouse l@(Point(x, y)) g@(GameState {hScores = hs, rndGen =  d}) | inBox 0 (screenh * 0.5) l = initialState d hs
                        | inBox 0 (-screenh * 0.5) l = g{infoToShow = ShowHighScores}
@@ -399,12 +389,8 @@ inBox dx dy (Point(x, y)) = x > dx - bw && x < bw + dx &&
                     where bw = screenw * 0.25
                           bh = screenh * 0.1
 
-<<<<<<< HEAD
-{-changes player location based on keypress, also shoots bullet when f is pressed-}
-=======
--- | Dit is een functie die inputs handled-
 
->>>>>>> edbe47288425488f4d775b07e0318adab6800331
+-- | changes player location based on keypress, also shoots bullet when f is pressed
 handleInput :: Char -> InfoToShow -> InfoToShow
 handleInput 'w' i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y + dy)}}
 handleInput 's' i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y - dy)}}
@@ -414,7 +400,7 @@ handleInput 'f' i@(InfoToShow {player = p@(Player{pos = (Point (x,y))}), bullets
       where distanceFromP = 40
 handleInput _ i = i
 
-{-changes player location based on press of arrow key, also shoots bullet when f is pressed-}
+-- | changes player location based on press of arrow key, also shoots bullet when f is pressed
 handleInputSpecial :: SpecialKey -> InfoToShow -> InfoToShow
 handleInputSpecial KeyUp    i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y + dy)}}
 handleInputSpecial KeyDown  i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y - dy)}}
@@ -425,8 +411,8 @@ handleInputSpecial KeySpace i@(InfoToShow {player = p@(Player{pos = (Point (x,y)
 handleInputSpecial _ i = i
 
 
---if the highscores in files is the same as current than go on
--- if its not rewrite the highscores in the file
+-- | if the highscores in files is the same as current than go on
+-- | if its not rewrite the highscores in the file
 readWriteScores :: GameState -> IO GameState
 readWriteScores gstate@(GameState {hScores = hs})= do
   scores <- readScores
@@ -434,7 +420,7 @@ readWriteScores gstate@(GameState {hScores = hs})= do
   else length scores `seq` writeScore gstate
 
 
---checks the code for words integers and returns a list of those
+-- | checks the code for words integers and returns a list of those
 readScores :: IO [String]
 readScores = do
     contents <- readFile "app/Scores.txt"
@@ -443,7 +429,7 @@ readScores = do
     let sortedScores = orderList integerScores
     return sortedScores
 
---replaces document with the current score
+-- | replaces document with the current score
 writeScore :: GameState -> IO GameState
 writeScore gstate@(GameState {hScores = hs}) = do
   writeFile "app/Scores.txt" (unlines hs) 
