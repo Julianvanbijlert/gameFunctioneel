@@ -46,7 +46,7 @@ showInfoToShow (InfoToShow {border = b, player = p, enemies = xs, bullets = bs})
                                                                                                , showLives p]
 
 showPlayer :: Player -> Picture
-showPlayer (Player (Point(x, y)) _ _) = let (xSize, ySize) = (30, 10) in color green (Polygon [(x, y - ySize), (x, y + ySize), (x + xSize, y)] ) --triangle
+showPlayer (Player {pos = (Point(x, y))}) = let (xSize, ySize) = (30, 10) in color green (Polygon [(x, y - ySize), (x, y + ySize), (x + xSize, y)] ) --triangle
 
 showListEnemies :: [Enemy] -> Picture
 showListEnemies [] = blank
@@ -90,31 +90,42 @@ showBorder (Border ytop ybot) = pictures [ color green (Polygon [(sw, sh), (sw, 
                                                   sh = Model.screenh  --helft van screenheight
 
 showScore :: Int -> Picture
-showScore i = color white (Translate (-50) (Model.screenh - 50) (Scale 0.3 0.3 (text (show i))))
+showScore i = color white (Translate (-distance) (Model.screenh - distance) (Scale scaler scaler (text (show i))))
+            where distance = 50
+                  scaler = 0.3
 
 --we made this player instead of putting it in the game in case we wanted to add multiplayer
 showLives :: Player -> Picture
-showLives (Player (Point(x, y)) _ h) = showLive (Point (0, 0)) (reverse h)
+showLives (Player {lives = h}) = showLive p (reverse h)
+            where p = Point (0, 0)
 
 showLive :: Model.Point -> [Heart] -> Picture
 showLive _ [] = blank
-showLive p@(Point (x, y)) (Heart : xs) = Pictures [drawHeart p, showLive (Point (x + 50, y)) xs]
-showLive p@(Point (x, y)) (Shield : xs) = Pictures [drawShield p, showLive (Point (x + 50, y)) xs]
+showLive p@(Point (x, y)) (Heart : xs) = Pictures [drawHeart p, showLive (Point (x + widthHeart, y)) xs]
+            where widthHeart = 50
+showLive p@(Point (x, y)) (Shield : xs) = Pictures [drawShield p, showLive (Point (x + widthHeart, y)) xs]
+            where widthHeart = 50
 
 drawHeart :: Model.Point -> Picture
-drawHeart (Point (x, y)) = Translate (-Model.screenw + 50 + x) (Model.screenh - 50 + y) heart
-  --color white (Translate (-100) 300 (Scale 0.3 0.3 (text (show (length p)))))
+drawHeart (Point (x, y)) = Translate xloc yloc heart
+            where xloc = -Model.screenw + 50 + x
+                  yloc = Model.screenh - 50 + y
 
 --https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.vecteezy.com%2Fpng%2F12658366-heart-shaped-love-icon-symbol-for-pictogram-app-website-logo-or-graphic-design-element-pixel-art-style-illustration-format-png&psig=AOvVaw3I1hrWNnEue6ymB1XQF6uH&ust=1698229669669000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCdnNS8joIDFQAAAAAdAAAAABAE
 heart :: Picture
-heart = color white (Scale 0.2 0.2 (text (show "<3")))
+heart = color white (Scale scaler scaler (text (show "<3")))
+  where scaler = 0.2
 
 drawShield :: Model.Point -> Picture
-drawShield (Point (x, y)) = Translate (-Model.screenw + 50 + x) (Model.screenh - 50 + y) shield
+drawShield (Point (x, y)) = Translate xloc yloc shield
+          where xloc = -Model.screenw + 50 + x
+                yloc = Model.screenh - 50 + y
 
 --Dall-e
 shield :: Picture
-shield = color white (Scale 0.2 0.2 (text (show "U")))
+shield = color white (Scale scaler scaler (text (show "U")))
+          where scaler = 0.2
+
 
 pause :: Picture
 pause = Pictures [showContinue, showExit]
@@ -132,10 +143,12 @@ textBox s = Pictures [box, text]
                 text = Color white $ Scale 0.2 0.2 $ Translate (-(screenw * 0.1 * fromIntegral (length s))) (-(screenh * 0.2)) $ Text s
 
 dead :: GameState -> Picture
-dead g@(GameState i t s sc _ _)= Pictures [score, shownew, showHome]
+dead g@(GameState i t s sc _ _)= Pictures [score, shownew, showSave, showHome]
         where score        = showInfoToShow i sc
-              shownew      = Translate 0 (screenh * 0.5) (textBox "New Game")
-              showHome     = Translate 0 (-screenh * 0.5) (textBox "Home")
+              shownew      = Translate 0 translate (textBox "New Game")
+              showSave     = Translate 0 0 (textBox "Save Score")
+              showHome     = Translate 0 (-translate) (textBox "Home")
+              translate    = screenh * 0.5
 
 
 {-
@@ -166,7 +179,6 @@ scoreToPic y s = Translate xpos  ypos (maybeToScore s)
         ypos = screenh * y
 
 maybeToScore :: String -> Picture
---maybeToScore Nothing = blank
 maybeToScore s = Color white $ Scale scaler scaler $ Translate lengthString pos $ Text s
   where scaler = 0.2
         lengthString = -(screenw * 0.1 * fromIntegral (length s))
