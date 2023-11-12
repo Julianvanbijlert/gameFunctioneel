@@ -426,8 +426,8 @@ handleInput _ i = i
 handleInputSpecial :: SpecialKey -> InfoToShow -> InfoToShow
 handleInputSpecial KeyUp    i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y + dy)}}
 handleInputSpecial KeyDown  i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y - dy)}}
-handleInputSpecial KeyLeft  i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x + dx,y)}}
-handleInputSpecial KeyRight i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x - dx,y)}}
+handleInputSpecial KeyLeft  i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x - dx,y)}}
+handleInputSpecial KeyRight i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x + dx,y)}}
 handleInputSpecial KeySpace i@(InfoToShow {player = p@(Player{pos = (Point (x,y))}), bullets = bul}) = i{ bullets = PlayerBullet (Point (x + distanceFromP, y)) (Vector (5, 0)) : bul }
       where distanceFromP = 40
 handleInputSpecial _ i = i
