@@ -6,7 +6,6 @@ module Controller where
 
 import Model
     ( numberOfSecsBetweenActions,
-      Powerup,
       Vector(Vector),
       Point(Point),
       State(Paused, GameOver, Running, Dead),

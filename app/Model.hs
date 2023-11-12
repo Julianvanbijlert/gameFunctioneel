@@ -2,7 +2,7 @@ module Model where
 import System.Random
   -- | This module contains the data types
   --   which represent the state of the game
-newtype Point = Point (Float, Float)
+newtype Point  = Point (Float, Float)
 newtype Vector = Vector (Float, Float)
 
 data Player = Player       { pos :: Point
@@ -37,11 +37,8 @@ data Heart =  Heart |
 
 data Border = Border Float Float --top y, bottom y
 
-data Powerup = FastShot | DoubleBullet | Extralife
-
-
 data State = Running | Paused | GameOver | Dead
-data Game = Game {}
+data Game  = Game {}
 
 data InfoToShow = InfoToShow { border :: Border
                              , player :: Player
