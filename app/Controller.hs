@@ -31,13 +31,13 @@ import Data.Maybe (catMaybes)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step secs gstate@(GameState {infoToShow = InfoToShow {enemies = e}, rndGen = sg})
+step secs gstate@(GameState { rndGen = sg})
     | elapsedTime gstate + secs > numberOfSecsBetweenActions = --nog random toevoegen
-      readWriteScores . spawnEnemyOrPowerUp (fst j) .  shootBulletEs . checkState $ gstate{rndGen = snd j}{ elapsedTime = 0}
+      readWriteScores . spawnEnemyOrPowerUp (fst j) .  shootBulletEs . checkState $ gstate{rndGen = snd j} { elapsedTime = 0}
     | otherwise = -- Just update the elapsed time
       readWriteScores . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
   where
-    j = let (minRange, maxRange) = (0,60) in if null e then (maxRange, sg) else makeRandomCoordinate sg minRange maxRange --makes a random number to decide if a enemy should be spawned
+    j = let (minRange, maxRange) = (0,60) in makeRandomCoordinate sg minRange maxRange --makes a random number to decide if a enemy should be spawned
 
 checkState :: GameState -> GameState
 checkState gstate@(GameState {state = Running, score = sc}) = collideFunction . moveEverything $ gstate {score = sc + 1 }
@@ -192,7 +192,7 @@ removeBullets = filter (not.f)
 
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
 spawnEnemyOrPowerUp i g@(GameState {infoToShow = InfoToShow b p e h, state= Running, score = m, rndGen = sg}) | let (highestScore, lowerLimit, mediumScore, middleLimit, highestLimit) = (30000, 45, 1000, 50, 55)
-                                                                                                                 in (m>highestScore && i >lowerLimit) ||(m > mediumScore && i > middleLimit) || i > highestLimit
+                                                                                                                 in (m>highestScore && i >lowerLimit) ||(m > mediumScore && i > middleLimit) || i > highestLimit || null e
                                                                                                                   = g{infoToShow = InfoToShow b p (fst (randomEnemy g) : e) h, rndGen = snd (randomEnemy g)}
                                                                                                               | otherwise = g--nog powerup toevoegen                                        
 spawnEnemyOrPowerUp i g = g
@@ -224,7 +224,8 @@ randomPowerup :: Powerup
 randomPowerup = undefined
 
 shootBulletEs :: GameState -> GameState
-shootBulletEs g@(GameState {infoToShow = InfoToShow b p e bul}) = g{infoToShow = InfoToShow b p e (catMaybes (concatMap (shootBulletE p) e)++bul)}
+shootBulletEs g@(GameState {infoToShow = InfoToShow b p e bul, state = Running}) = g{infoToShow = InfoToShow b p e (catMaybes (concatMap (shootBulletE p) e) ++ bul)}
+shootBulletEs g = g
 
 shootBulletE :: Player -> Enemy -> [Maybe Bullet]
 shootBulletE _ (Rock {})  =
@@ -337,6 +338,7 @@ inBox dx dy (x, y) = x > dx - bw && x < bw + dx &&
                      y > dy - bh && y < bh + dy
                     where bw = screenw * 0.25
                           bh = screenh * 0.1
+
 {-Dit is een functie die inputs handled, alleen moet er nog gefixt worden dat ingedrukt houden 
 meerdere interacties doet en dat het niet dubbel aangeroepen is als het omhoog gaat en losgelaten wordt-}
 handleInput :: Char -> InfoToShow -> InfoToShow
@@ -362,7 +364,7 @@ readWriteScores gstate@(GameState _ _ _ _ hs _)= do
   scores <- readScores
   let newHighScores = hs
   if scores == newHighScores then return gstate
-  else length scores `seq`writeScore gstate
+  else length scores `seq` writeScore gstate
 
 
 --readWriteScores :: GameState -> IO GameState
