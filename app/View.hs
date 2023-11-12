@@ -23,7 +23,7 @@ viewPure gstate@(GameState {infoToShow = i, score = sc, hScores =  hs}) = case s
   Paused   -> pause
   GameOver -> case infoToShow gstate of
                   InfoToShow {} -> gameOver
-                  ShowHighScores        -> showHighScores $ orderList hs
+                  ShowHighScores        -> showHighScores hs
   Dead     -> dead gstate
 
 showInfoToShow :: InfoToShow -> Int -> Picture
@@ -148,8 +148,3 @@ maybeToScore s = Color white $ Scale scaler scaler $ Translate lengthString pos 
         lengthString = -(screenw * 0.1 * fromIntegral (length s))
         pos = -(screenh * scaler)
 
-orderList :: [String] -> [String]
-orderList = sortBy compareTwo
-
-compareTwo :: String -> String -> Ordering
-compareTwo a b = compare (read b :: Int) (read a :: Int)
