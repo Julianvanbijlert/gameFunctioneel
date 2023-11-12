@@ -5,18 +5,6 @@ module Controller where
   --   in response to time and user input
 
 import Model
-    ( numberOfSecsBetweenActions,
-      Vector(Vector),
-      Point(Point),
-      State(Paused, GameOver, Running, Dead),
-      Bullet(..),
-      Enemy(..),
-      Player(..),
-      InfoToShow(InfoToShow, enemies, ShowHighScores, player, bullets),
-      GameState(GameState, elapsedTime, score, state, infoToShow, hScores, rndGen), Heart (Heart),Border (Border), screenw, screenh,
-      initialState
-    )
-
 
 import Data.Char (isDigit)
 import Graphics.Gloss
@@ -89,7 +77,7 @@ moveEnemy :: Player -> Enemy -> Enemy
 moveEnemy _ e@(Rock {enemyLives = []})       = e
 moveEnemy _ e@(SpaceShip {enemyLives = []})  = e
 moveEnemy _ e@(Jet {enemyLives = []})        = e
-moveEnemy _ e@(MotherShip {enemyLives = []}) =  e
+moveEnemy _ e@(MotherShip {enemyLives = []}) = e
 -- enemy moves along its set vector
 moveEnemy _ e@(SpaceShip { enemyPos = (Point(x, y)), enemyDir = (Vector(dx, dy))}) =  e{enemyPos = Point (x + dx, y + dy ), enemyDir = Vector (dx, dy)}
 moveEnemy _ e@(Rock { enemyPos = (Point(x, y)), enemyDir      = (Vector(dx, dy))}) =  e{enemyPos = Point (x + dx, y + dy ), enemyDir = Vector (dx, dy)}

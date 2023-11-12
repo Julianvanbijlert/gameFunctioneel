@@ -1,7 +1,7 @@
 module Main where
 
 import Controller
-import Model (initialState, screenh, screenw,  )
+import Model
 import View
 import Graphics.Gloss.Interface.IO.Game
     ( black, Display(InWindow), Color, playIO )

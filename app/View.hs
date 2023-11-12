@@ -4,17 +4,6 @@ module View where
 
 import Graphics.Gloss hiding (Point)
 import Model
-    ( Heart(..),
-      Point(..),
-      Border(..),
-      Bullet(..),
-      Enemy(..),
-      Player(..),
-      State(..),
-      InfoToShow(..),
-      GameState(GameState, infoToShow, state, score, hScores),
-      screenw,
-      screenh, )
 
 import Data.List
 import Data.Ord (comparing)
@@ -101,7 +90,6 @@ drawHeart (Point (x, y)) = Translate xloc yloc heart
             where xloc = -Model.screenw + 50 + x
                   yloc = Model.screenh - 50 + y
 
---https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.vecteezy.com%2Fpng%2F12658366-heart-shaped-love-icon-symbol-for-pictogram-app-website-logo-or-graphic-design-element-pixel-art-style-illustration-format-png&psig=AOvVaw3I1hrWNnEue6ymB1XQF6uH&ust=1698229669669000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCPCdnNS8joIDFQAAAAAdAAAAABAE
 heart :: Picture
 heart = color white (Scale scaler scaler (text (show "<3")))
   where scaler = 0.2
@@ -111,7 +99,7 @@ drawShield (Point (x, y)) = Translate xloc yloc shield
           where xloc = -Model.screenw + 50 + x
                 yloc = Model.screenh - 50 + y
 
---Dall-e
+
 shield :: Picture
 shield = color white (Scale scaler scaler (text (show "U")))
           where scaler = 0.2
@@ -140,20 +128,6 @@ dead g@(GameState i t s sc _ _)= Pictures [score, shownew, showSave, showHome]
               showHome     = Translate 0 (-translate) (textBox "Home")
               translate    = screenh * 0.5
 
-
-{-
-getHighScores :: IO Picture
-getHighScores = do 
-  config <- readFile "Scores.txt"
-  let f:s:t:fo:fi:_ = lines config
-  return (showHighScores f s t fo fi)
-  -}
-
---showHighScores :: Maybe String -> Maybe String -> Maybe String -> Maybe String -> Maybe String -> Picture
---showHighScores Nothing Nothing Nothing Nothing Nothing = blank
-
-
---inefficient maar werkt :D
 showHighScores :: [String]-> Picture
 showHighScores (f: s: t: fo: fi: _) = Pictures [ scoreToPic 0.5 f, scoreToPic 0.3 s, scoreToPic 0.1 t, scoreToPic (-0.1) fo, scoreToPic (-0.3) fi, Translate 0 (-screenh * 0.6) (textBox "Home")]
 showHighScores (f: s: t: fo:  _)    = Pictures [ scoreToPic 0.5 f, scoreToPic 0.3 s, scoreToPic 0.1 t, scoreToPic (-0.1) fo, Translate 0 (-screenh * 0.6) (textBox "Home")]
