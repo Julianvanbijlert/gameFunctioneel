@@ -120,10 +120,9 @@ pause = Pictures [showContinue, showSave, showExit]
                       showExit     = Translate 0 (-screenh * 0.5) (textBox "Exit")
 
 gameOver :: Picture
-gameOver = Pictures [showStart, showHighScore, showControls]
+gameOver = Pictures [showStart, showHighScore]
                 where showStart     = Translate 0 (screenh * 0.5) (textBox "Start game")
-                      showHighScore = textBox "High Scores"
-                      showControls  = Translate 0 (-screenh * 0.5) (textBox "Load game")
+                      showHighScore = Translate 0 (-screenh * 0.5) (textBox "High Scores")
 
 textBox :: String -> Picture
 textBox s = Pictures [box, text]
@@ -131,16 +130,12 @@ textBox s = Pictures [box, text]
                 text = Color white $ Scale 0.2 0.2 $ Translate (-(screenw * 0.1 * fromIntegral (length s))) (-(screenh * 0.2)) $ Text s
 
 dead :: GameState -> Picture
-dead g@(GameState i t s sc _ _)= Pictures [score, shownew, showSave, showHome]
-        where score        = showInfoToShow i sc--showScore sc
+dead g@(GameState i t s sc _ _)= Pictures [score, shownew, showHome]
+        where score        = showInfoToShow i sc
               shownew      = Translate 0 (screenh * 0.5) (textBox "New Game")
-              showSave     = textBox "Save score"
               showHome     = Translate 0 (-screenh * 0.5) (textBox "Home")
 
-stateAction :: State -> Picture --niet goed
-stateAction Running = undefined
-stateAction Paused = undefined
-stateAction GameOver = undefined
+
 {-
 getHighScores :: IO Picture
 getHighScores = do 
@@ -161,13 +156,19 @@ showHighScores (f: s: t: _)         = Pictures [ scoreToPic 0.5 f, scoreToPic 0.
 showHighScores (f: s: _)            = Pictures [ scoreToPic 0.5 f, scoreToPic 0.3 s, Translate 0 (-screenh * 0.6) (textBox "Home")]
 showHighScores (f: _)               = Pictures [ scoreToPic 0.5 f,  Translate 0 (-screenh * 0.6) (textBox "Home")]
 showHighScores []                   = Translate 0 (-screenh * 0.6) (textBox "Home")
+  
 
 scoreToPic :: Float -> String -> Picture
-scoreToPic y s = Translate 0 (screenh * y)  (maybeToScore s)
+scoreToPic y s = Translate xpos  ypos (maybeToScore s)
+  where xpos = 0
+        ypos = screenh * y
 
 maybeToScore :: String -> Picture
 --maybeToScore Nothing = blank
-maybeToScore s = Color white $ Scale 0.2 0.2 $ Translate (-(screenw * 0.1 * fromIntegral (length s))) (-(screenh * 0.2)) $ Text s
+maybeToScore s = Color white $ Scale scaler scaler $ Translate lengthString pos $ Text s
+  where scaler = 0.2
+        lengthString = -(screenw * 0.1 * fromIntegral (length s))
+        pos = -(screenh * scaler)
 
 orderList :: [String] -> [String]
 orderList = sortBy compareTwo

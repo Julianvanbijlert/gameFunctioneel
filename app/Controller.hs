@@ -13,7 +13,7 @@ import Model
       Bullet(..),
       Enemy(..),
       Player(..),
-      InfoToShow(InfoToShow, enemies, ShowHighScores, player),
+      InfoToShow(InfoToShow, enemies, ShowHighScores, player, bullets),
       GameState(GameState, elapsedTime, score, state, infoToShow, hScores, rndGen), Heart (Heart),Border (Border), screenw, screenh,
       initialState
     )
@@ -188,20 +188,22 @@ removeEnemies (x : xs) =  x: removeEnemies xs -- TODO higher order functions??
 removeBullets :: [Bullet]->[Bullet]
 removeBullets = filter (not.f)
         where f (PlayerBullet {bulletPos = (Point(x,y))}) = let (xSize, ySize) = (3,2) in x-xSize>screenw ||x+xSize<(-screenw)|| y+ySize<(-screenh) ||y-ySize>screenh
-              f (EnemyBullet {bulletPos = (Point(x,y))}) = let (xSize, ySize) = (3,2) in x-xSize>screenw ||x+xSize<(-screenw)|| y+ySize<(-screenh) ||y-ySize>screenh
+              f (EnemyBullet  {bulletPos = (Point(x,y))}) = let (xSize, ySize) = (3,2) in x-xSize>screenw ||x+xSize<(-screenw)|| y+ySize<(-screenh) ||y-ySize>screenh
 
+-- | Spawns only enemies
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
 spawnEnemyOrPowerUp i g@(GameState {infoToShow = InfoToShow b p e h, state= Running, score = m, rndGen = sg}) | let (highestScore, lowerLimit, mediumScore, middleLimit, highestLimit) = (30000, 45, 1000, 50, 55) 
                                                                                                                  in (m>highestScore && i >lowerLimit) ||(m > mediumScore && i > middleLimit) || i > highestLimit
                                                                                                                   = g{infoToShow = InfoToShow b p (fst (randomEnemy g) : e) h, rndGen = snd (randomEnemy g)}
                                                                                                               | otherwise = g--nog powerup toevoegen                                        
-spawnEnemyOrPowerUp i g = g
+spawnEnemyOrPowerUp _ g = g
 
 makeRandomCoordinate :: StdGen -> Float -> Float -> (Float, StdGen)
 makeRandomCoordinate g0 x y = (a, g1)
     where
       (a,g1) =  randomR (x,y :: Float) g0
 
+-- | Mathimatical way to normalize a vector
 normalize :: Model.Vector -> Model.Vector
 normalize (Vector (x,y)) = Vector (x / p, y / p)
           where p = sqrt (x*x + y*y)
@@ -220,11 +222,9 @@ randomEnemy g@(GameState {infoToShow = InfoToShow (Border m n) (Player(Point(x,y
 
 
 
-randomPowerup :: Powerup
-randomPowerup = undefined
 
 shootBulletEs :: GameState -> GameState
-shootBulletEs g@(GameState {infoToShow = InfoToShow b p e bul}) = g{infoToShow = InfoToShow b p e (catMaybes (concatMap (shootBulletE p) e)++bul)}
+shootBulletEs g@(GameState {infoToShow = InfoToShow b p e bul, state = Running}) = g{infoToShow = InfoToShow b p e (catMaybes (concatMap (shootBulletE p) e)++bul)}
 
 shootBulletE :: Player -> Enemy -> [Maybe Bullet]
 shootBulletE _ (Rock {})  =
@@ -274,99 +274,98 @@ inputKey e gstate = case state gstate of
             GameOver -> gOverInput e gstate
             Dead -> deadInput e gstate
 
+--first check input on escape to pause the game. This is because specialinputs already get handled 
+--and we want to separate this one.             
 runInput :: Event -> GameState -> GameState
 runInput (EventKey (SpecialKey KeyEsc) Down _ _) gstate= gstate{state = Paused}
-runInput (EventKey (SpecialKey k) Down _ _) gstate@(GameState i _ _ _ _ _) = gstate {infoToShow = handleInputSpecial k i}
-runInput (EventKey (Char c) Down _  _) gstate@(GameState i _ _ _ _ _) =            gstate { infoToShow = handleInput c i }
-runInput (EventKey (MouseButton LeftButton) Down _ (x, y)) gstate@(GameState i _ _ _ _ _) = gstate{infoToShow = runMouse (x, y) i}
-runInput _ gstate@(GameState i e s sc _ _) = gstate
+runInput (EventKey (SpecialKey k) Down _ _) gstate@(GameState {infoToShow = i}) = gstate {infoToShow = handleInputSpecial k i}
+runInput (EventKey (Char c) Down _  _) gstate@(GameState {infoToShow = i}) = gstate { infoToShow = handleInput c i }
+runInput (EventKey (MouseButton LeftButton) Down _ (x, y)) gstate@(GameState {infoToShow = i}) = gstate{infoToShow = runMouse (Point(x, y)) i}
+runInput _ gstate = gstate
 
+--if esc, change state to running again. if mouse input do the mouseinput function
 pauseInput :: Event -> GameState -> GameState
 pauseInput (EventKey (SpecialKey KeyEsc) Down _ _) gstate = gstate{state = Running}
-pauseInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = pauseMouse (x, y) g
+pauseInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = pauseMouse (Point(x, y)) g
 pauseInput _ gstate = gstate
 
 gOverInput :: Event -> GameState -> GameState
-gOverInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = gOverMouse (x, y) g
+gOverInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = gOverMouse (Point(x, y)) g
 gOverInput _ gstate = gstate
 
 deadInput :: Event -> GameState -> GameState
-deadInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = deadMouse (x, y) g
+deadInput (EventKey (MouseButton LeftButton) Down _ (x, y)) g = deadMouse (Point(x, y)) g
 deadInput _ gstate = gstate
 
-runMouse :: (Float, Float) -> InfoToShow -> InfoToShow
-runMouse l@(x1, y1) i@(InfoToShow {player = (Player (Point(x, y)) (Vector(dx, dy)) h)}) = i{player = Player (getLoc (x,y) (x1, y1) (dx,dy)) (Vector (dx, dy)) h}
+runMouse :: Model.Point -> InfoToShow -> InfoToShow
+runMouse l@(Point(x1, y1)) i@(InfoToShow {player = (Player {pos = (Point(x, y)), dir = (Vector(dx, dy)), lives = h}) }) = i{player = Player (getLoc (x,y) (x1, y1) (dx,dy)) (Vector (dx, dy)) h}
 
 getLoc ::(Float, Float) -> (Float, Float)  -> (Float, Float)  -> Model.Point
 getLoc (px, py) (mx, my) (dx, dy)  = Model.Point (px + nx * dx, py + ny * dy)
                               where n@(Model.Vector (nx, ny)) = normalize (Vector (mx - px, my - py))
-
-pauseMouse :: (Float, Float) -> GameState -> GameState
-pauseMouse l@(x, y) g | inBox 0 (screenh * 0.5) l = g{state = Running}
-                      | inBox 0 0 l = undefined
+--checks if pressed in two boxes, one for continue and one for exit
+pauseMouse :: Model.Point -> GameState -> GameState
+pauseMouse l@(Point(x, y)) g | inBox 0 (screenh * 0.5) l = g{state = Running}
                       | inBox 0 (-screenh * 0.5) l = g{state = GameOver}
                       | otherwise = g
 
-gOverMouse :: (Float, Float) -> GameState -> GameState
-gOverMouse l@(x,y) g = case infoToShow g of
+gOverMouse :: Model.Point -> GameState -> GameState
+gOverMouse l@(Point(x, y)) g = case infoToShow g of
   InfoToShow b p xs bs -> igOverMouse l g
   ShowHighScores -> hsgOverMouse l g
 
 
-hsgOverMouse ::(Float, Float) -> GameState -> GameState
-hsgOverMouse l@(x, y) g@(GameState _ _ _ _ hs d) | inBox 0 (-screenh * 0.6) l = (initialState d hs){state = GameOver}
+hsgOverMouse ::Model.Point -> GameState -> GameState
+hsgOverMouse l@(Point(x, y)) g@(GameState _ _ _ _ hs d) | inBox 0 (-screenh * 0.6) l = (initialState d hs){state = GameOver}
                                                     | otherwise = g
 
-igOverMouse :: (Float, Float) -> GameState -> GameState
-igOverMouse l@(x, y) g@(GameState _ _ _ _ hs d) | inBox 0 (screenh * 0.5) l = initialState d hs
-                       | inBox 0 0 l = g{infoToShow = ShowHighScores}
-                       | inBox 0 (-screenh * 0.5) l = undefined
+igOverMouse :: Model.Point -> GameState -> GameState
+igOverMouse l@(Point(x, y)) g@(GameState _ _ _ _ hs d) | inBox 0 (screenh * 0.5) l = initialState d hs
+                       | inBox 0 (-screenh * 0.5) l = g{infoToShow = ShowHighScores}
                        | otherwise = g
 
 
 
-deadMouse :: (Float, Float) -> GameState -> GameState
-deadMouse l@(x, y) g@(GameState _ _ _ sc hs d) | inBox 0 (screenh * 0.5) l = initialState d hs
+deadMouse :: Model.Point -> GameState -> GameState
+deadMouse l@(Point(x, y)) g@(GameState _ _ _ sc hs d) | inBox 0 (screenh * 0.5) l = initialState d hs
                      | inBox 0 0 l = g{state = GameOver, infoToShow = ShowHighScores, hScores = show sc : hs} --Zorg dat het ook echt saved LOLL
                      | inBox 0 (-screenh * 0.5) l = g{state = GameOver}
                      | otherwise = g
 
-
-inBox :: Float -> Float -> (Float, Float) -> Bool
-inBox dx dy (x, y) = x > dx - bw && x < bw + dx &&
+--checks if the given point is in box 
+inBox :: Float -> Float -> Model.Point -> Bool
+inBox dx dy (Point(x, y)) = x > dx - bw && x < bw + dx &&
                      y > dy - bh && y < bh + dy
                     where bw = screenw * 0.25
                           bh = screenh * 0.1
-{-Dit is een functie die inputs handled, alleen moet er nog gefixt worden dat ingedrukt houden 
-meerdere interacties doet en dat het niet dubbel aangeroepen is als het omhoog gaat en losgelaten wordt-}
+{-Dit is een functie die inputs handled-}
 handleInput :: Char -> InfoToShow -> InfoToShow
-handleInput 'w' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x, y + dy)) (Vector (dx, dy)) h) e bul
-handleInput 's' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x, y - dy)) (Vector (dx, dy)) h) e bul
-handleInput 'a' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x - dx, y)) (Vector (dx, dy)) h) e bul
-handleInput 'd' (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x + dx, y)) (Vector (dx, dy)) h) e bul
-handleInput 'f' (InfoToShow b p@(Player (Point(x, y)) _ _) e bul) = InfoToShow b p e (PlayerBullet (Point (x + 40, y)) (Vector (5, 0)) : bul)
+handleInput 'w' i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y + dy)}}
+handleInput 's' i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y - dy)}}
+handleInput 'a' i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x + dx,y)}}
+handleInput 'd' i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x - dx,y)}}
+handleInput 'f' i@(InfoToShow {player = p@(Player{pos = (Point (x,y))}), bullets = bul}) = i{ bullets = PlayerBullet (Point (x + distanceFromP, y)) (Vector (5, 0)) : bul }
+      where distanceFromP = 40
 handleInput _ i = i
 
 handleInputSpecial :: SpecialKey -> InfoToShow -> InfoToShow
-handleInputSpecial KeyUp    (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x, y + dy)) (Vector (dx, dy)) h) e bul
-handleInputSpecial KeyDown  (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x, y - dy)) (Vector (dx, dy)) h) e bul
-handleInputSpecial KeyLeft (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x - dx, y)) (Vector (dx, dy)) h) e bul
-handleInputSpecial KeyRight (InfoToShow b (Player (Point(x, y)) (Vector(dx, dy)) h) e bul) = InfoToShow b (Player (Point (x + dx, y)) (Vector (dx, dy)) h) e bul
-handleInputSpecial KeySpace (InfoToShow b p@(Player (Point(x, y)) _ _) e bul) = InfoToShow b p e (PlayerBullet (Point (x + 40, y)) (Vector (5, 0)) : bul)
+handleInputSpecial KeyUp    i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y + dy)}}
+handleInputSpecial KeyDown  i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y - dy)}}
+handleInputSpecial KeyLeft  i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x + dx,y)}}
+handleInputSpecial KeyRight i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x - dx,y)}}
+handleInputSpecial KeySpace i@(InfoToShow {player = p@(Player{pos = (Point (x,y))}), bullets = bul}) = i{ bullets = PlayerBullet (Point (x + distanceFromP, y)) (Vector (5, 0)) : bul }
+      where distanceFromP = 40
 handleInputSpecial _ i = i
 
 
-
+--if the highscores in files is the same as current than go on
+-- if its not rewrite the highscores in the file
 readWriteScores :: GameState -> IO GameState
-readWriteScores gstate@(GameState _ _ _ _ hs _)= do
+readWriteScores gstate@(GameState {hScores = hs})= do
   scores <- readScores
-  let newHighScores = hs
-  if scores == newHighScores then return gstate
+  if scores == hs then return gstate
   else length scores `seq`writeScore gstate
 
-
---readWriteScores :: GameState -> IO GameState
---readWriteScores = readScores
 
 readScores :: IO [String]
 readScores = do
@@ -376,7 +375,7 @@ readScores = do
     return scores2
 
 writeScore :: GameState -> IO GameState
-writeScore gstate@(GameState i t s sc hs sg) = do
-  writeFile "app/Scores.txt" (unlines hs)  --( show sc ++ "\n")
+writeScore gstate@(GameState {hScores = hs}) = do
+  writeFile "app/Scores.txt" (unlines hs) 
   return gstate
 
