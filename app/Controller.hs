@@ -5,16 +5,15 @@ module Controller where
   --   in response to time and user input
 
 import Model
-import Data.Ord (comparing)
 import Data.Char (isDigit)
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
-import Data.List
 import Graphics.Gloss.Data.Picture
 
 import Graphics.Gloss.Data.Color
 import Data.Maybe (catMaybes)
+import Data.List
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
@@ -314,20 +313,6 @@ shootBulletE (Player {pos = (Point(x,y))}) (MotherShip {enemyPos = (Point(xt, yt
             v1@(xv1, yv1) = ((x+degreesRotation) -(xt-spawnDistanceX), (y+degreesRotation) - yt)
             v2@(xv2, yv2) = ((x-degreesRotation) -(xt-spawnDistanceX), (y-degreesRotation) - yt)
 
-
-{-inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Running sc _)
-  = gstate{state = Paused}
-inputKey (EventKey (SpecialKey KeyEsc) Down _ _) gstate@(GameState i e Paused sc _)
-  = gstate{state = Running}
-inputKey (EventKey (Char c) Down _  _) gstate@(GameState i e Running sc _)
-  = -- If the user presses a character key, show that one
-  gstate { infoToShow = handleInput c i }
-inputKey (EventKey (SpecialKey k) Down _ _) gstate@(GameState i e Running sc _)
-  = gstate {infoToShow = handleInputSpecial k i}
-
-inputKey _ gstate@(GameState i e Paused sc _) = gstate
-inputKey _ gstate = gstate -- Otherwise keep the same
--}
 inputKey :: Event -> GameState -> GameState
 inputKey e gstate = case state gstate of
             Running -> runInput e gstate
@@ -364,6 +349,7 @@ runMouse l@(Point(x1, y1)) i@(InfoToShow {player = (Player {pos = (Point(x, y)),
 getLoc ::(Float, Float) -> (Float, Float)  -> (Float, Float)  -> Model.Point
 getLoc (px, py) (mx, my) (dx, dy)  = Model.Point (px + nx * dx, py + ny * dy)
                               where n@(Model.Vector (nx, ny)) = normalize (Vector (mx - px, my - py))
+
 --checks if pressed in two boxes, one for continue and one for exit
 pauseMouse :: Model.Point -> GameState -> GameState
 pauseMouse l@(Point(x, y)) g | inBox 0 (screenh * 0.5) l = g{state = Running}
@@ -377,30 +363,29 @@ gOverMouse l@(Point(x, y)) g = case infoToShow g of
 
 
 hsgOverMouse ::Model.Point -> GameState -> GameState
-hsgOverMouse l@(Point(x, y)) g@(GameState _ _ _ _ hs d) | inBox 0 (-screenh * 0.6) l = (initialState d hs){state = GameOver}
-                                                    | otherwise = g
+hsgOverMouse l@(Point(x, y)) g@(GameState {hScores = hs, rndGen =  d}) | inBox 0 (-screenh * 0.6) l = (initialState d hs){state = GameOver}
+                                                                       | otherwise = g
 
 igOverMouse :: Model.Point -> GameState -> GameState
-igOverMouse l@(Point(x, y)) g@(GameState _ _ _ _ hs d) | inBox 0 (screenh * 0.5) l = initialState d hs
+igOverMouse l@(Point(x, y)) g@(GameState {hScores = hs, rndGen =  d}) | inBox 0 (screenh * 0.5) l = initialState d hs
                        | inBox 0 (-screenh * 0.5) l = g{infoToShow = ShowHighScores}
                        | otherwise = g
 
-
-
+-- | if the state is death then this mouse is used
 deadMouse :: Model.Point -> GameState -> GameState
-deadMouse l@(Point(x, y)) g@(GameState _ _ _ sc hs d) | inBox 0 (screenh * 0.5) l = initialState d hs
-                     | inBox 0 0 l = g{state = GameOver, infoToShow = ShowHighScores, hScores = show sc : hs} --Zorg dat het ook echt saved LOLL
+deadMouse l@(Point(x, y)) g@(GameState {score = sc, hScores = hs, rndGen =  d}) | inBox 0 (screenh * 0.5) l = initialState d hs
+                     | inBox 0 0 l = g{state = GameOver, infoToShow = ShowHighScores, hScores = show sc : hs} --Zorg dat het ook echt saved
                      | inBox 0 (-screenh * 0.5) l = g{state = GameOver}
                      | otherwise = g
 
---checks if the given point is in box 
+-- | checks if the given point is in box 
 inBox :: Float -> Float -> Model.Point -> Bool
 inBox dx dy (Point(x, y)) = x > dx - bw && x < bw + dx &&
                      y > dy - bh && y < bh + dy
                     where bw = screenw * 0.25
                           bh = screenh * 0.1
 
-{-Dit is een functie die inputs handled-}
+-- | Dit is een functie die inputs handled-
 
 handleInput :: Char -> InfoToShow -> InfoToShow
 handleInput 'w' i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y + dy)}}

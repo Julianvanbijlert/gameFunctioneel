@@ -8,32 +8,6 @@ import Graphics.Gloss.Interface.IO.Game
 import Graphics.Gloss
 import System.Random
 
-
-{- 
-Play :: Display	
-Display mode.
-
--> Color	
-Background color.
-
--> Int	
-Number of simulation steps to take for each second of real time.
-
--> world	
-The initial world.
-
--> (world -> Picture)
-A function to convert the world a picture.
-
--> (Event -> world -> world)	
-A function to handle input events.
-
--> (Float -> world -> world)	
-A function to step the world one iteration. It is passed the period of time (in seconds) needing to be advanced.
-
--> IO ()
--}
-
 main :: IO ()
 main = do
     
@@ -42,17 +16,16 @@ main = do
     length h `seq` writeFile "app/Scores.txt" (unlines h)
     
     
-    playIO window -- Or FullScreen
-              backgroundColor  -- Background color
-              fps              -- Frames per second
+    playIO window                   
+              backgroundColor       -- Background color
+              fps                   -- Frames per second
               (initialState x h)    -- Initial state
-              view             -- View function
-              input            -- Event function
-              step             -- Step function
--- main = play window backgroundColor fps initialGame gameAsPicture transformGame (\\_ ->id)
+              view                  -- View function
+              input                 -- Event function
+              step                  -- Step function
 
 window :: Display
-window = InWindow "Shoot m up" (round Model.screenw * 2, round Model.screenh * 2) (10, 10) -- TODO waarvoor staat de 10,10
+window = let size = 10 in InWindow "Shoot m up" (round Model.screenw * 2, round Model.screenh * 2) (size, size)
 
 backgroundColor :: Color
 backgroundColor = black
