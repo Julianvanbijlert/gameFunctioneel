@@ -91,8 +91,14 @@ initialPlayer = Player beginPoint playerVector [Shield, Heart, Heart, Heart]
 borders :: Border
 borders = let distanceTillBorder = 10 in Border (screenh - distanceTillBorder) (-screenh + distanceTillBorder) --top y bottom y
 
+-- Enemies will be spawned in the beginning
+-- Examples: [Rock (Point (screenw-10, 100)) (Vector (-1,0)) [Heart] 0
+--                 , SpaceShip (Point (screenw-10, 50)) (Vector (-1, -(1/13))) [Heart, Heart, Heart] 0
+--                 , Jet (Point (screenw-10, -50)) (Vector (-1, 1/13)) [Heart, Heart, Heart] 0
+--                 , MotherShip (Point (screenw-10, -100)) (Vector (0, 1)) [Heart, Heart, Heart, Heart, Heart] 0
+--                 ]
 startEnemies :: [Enemy]
-startEnemies = []
+startEnemies = [ ]
 
 initialState :: StdGen -> [String] -> GameState
 initialState s hs = GameState (InfoToShow borders initialPlayer startEnemies [] )  0 Running 0 hs s --nog een random stdgen nodig

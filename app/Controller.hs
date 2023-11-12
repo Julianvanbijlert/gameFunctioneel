@@ -55,7 +55,7 @@ collideFunction gstate@(GameState {infoToShow = InfoToShow o p e b, score = sc})
           e4 = removeEnemies e3 -- remove all enemies that died
           b3 = removeBullets b2 -- removes all bullets out of screen
 
--- | checks for every enemie if it collides and updates the enemy hearts and the score
+-- | checks for every enemy if it collides and updates the enemy hearts and the score
 collideFunctionEnemy :: (Collides s a, Remove s, Num score) => [s] -> [a] -> score -> ([s], [a], score)
 collideFunctionEnemy e [] sc = (e, [], sc)
 collideFunctionEnemy [] b sc = ([], b, sc)
@@ -68,25 +68,26 @@ collideFunctionBoard p b | collides p b = destroy p
 
 moveEverything :: GameState -> GameState
 moveEverything gstate@(GameState {infoToShow = InfoToShow b p xs bs}) = gstate{infoToShow = InfoToShow b p enem bul}
-                                                                where enem = moveAllEnemies xs
+                                                                where enem = moveAllEnemies p xs
                                                                       bul  = moveAllBullets bs
 checkDead :: GameState -> GameState
 checkDead gstate@(GameState {infoToShow = InfoToShow _ p _ _, state = running})  | isDead p = gstate{state = Dead}
                                                                  | otherwise = gstate
 
 
-moveAllEnemies :: [Enemy] -> [Enemy]
-moveAllEnemies = map moveEnemy
+moveAllEnemies :: Player -> [Enemy] -> [Enemy]
+moveAllEnemies p = map (moveEnemy p)
 
-moveEnemy :: Enemy -> Enemy
-moveEnemy e@(Rock {enemyLives = []}) = e
-moveEnemy e@(SpaceShip {enemyLives = []}) = e
-moveEnemy e@(Jet {enemyLives = []}) = e
-moveEnemy e@(MotherShip {enemyLives = []}) =  e
-moveEnemy e@(SpaceShip { enemyPos = (Point(x, y)), enemyDir = (Vector(dx, dy))}) =  e{enemyPos = Point (x + dx, y + dy ), enemyDir = Vector (dx, dy)}
-moveEnemy e@(Rock { enemyPos = (Point(x, y)), enemyDir = (Vector(dx, dy))}) =  e{enemyPos = Point (x + dx, y + dy ), enemyDir = Vector (dx, dy)}
-moveEnemy e@(Jet { enemyPos = (Point(x, y)), enemyDir = (Vector(dx, dy))}) =  e{enemyPos = Point (x + dx, y + dy ), enemyDir = Vector (dx, dy)}
-moveEnemy e@(MotherShip { enemyPos = (Point(x, y)), enemyDir = (Vector(dx, dy))}) =  e{enemyPos = Point (x + dx, y + dy ), enemyDir = Vector (dx, dy)}
+moveEnemy :: Player -> Enemy -> Enemy
+moveEnemy _ e@(Rock {enemyLives = []}) = e
+moveEnemy _ e@(SpaceShip {enemyLives = []}) = e
+moveEnemy _ e@(Jet {enemyLives = []}) = e
+moveEnemy _ e@(MotherShip {enemyLives = []}) =  e
+moveEnemy _ e@(SpaceShip { enemyPos = (Point(x, y)), enemyDir = (Vector(dx, dy))}) =  e{enemyPos = Point (x + dx, y + dy ), enemyDir = Vector (dx, dy)}
+moveEnemy _ e@(Rock { enemyPos = (Point(x, y)), enemyDir = (Vector(dx, dy))}) =  e{enemyPos = Point (x + dx, y + dy ), enemyDir = Vector (dx, dy)}
+moveEnemy _ e@(Jet { enemyPos = (Point(x, y)), enemyDir = (Vector(dx, dy))}) =  e{enemyPos = Point (x + dx, y + dy ), enemyDir = Vector (dx, dy)}
+moveEnemy (Player {pos = (Point(xt,yt))}) e@(MotherShip { enemyPos = (Point(x, y)), enemyDir = (Vector(dx, dy))}) =  e{enemyPos = Point (x + a, y + b ), enemyDir = v}
+                where v@(Vector (a,b)) =  normalize (Vector (xt- x , yt-y))
 
 moveAllBullets :: [Bullet] -> [Bullet]
 moveAllBullets = map moveBullet
