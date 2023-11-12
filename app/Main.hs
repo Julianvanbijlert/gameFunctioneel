@@ -33,6 +33,7 @@ A function to step the world one iteration. It is passed the period of time (in 
 
 -> IO ()
 -}
+
 main :: IO ()
 main = do
     
