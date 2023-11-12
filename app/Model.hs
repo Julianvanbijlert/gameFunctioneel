@@ -8,6 +8,7 @@ newtype Vector = Vector (Float, Float)
 data Player = Player       { pos :: Point
                            , dir :: Vector
                            , lives :: [Heart] }
+                           
 data Enemy =  SpaceShip    { enemyPos :: Point
                            , enemyDir :: Vector
                            , enemyLives :: [Heart]
@@ -52,8 +53,6 @@ data InfoToShow = InfoToShow { border :: Border
 
 numberOfSecsBetweenActions :: Float
 numberOfSecsBetweenActions = 1
-
-
 
 data GameState = GameState {
                    infoToShow  :: InfoToShow

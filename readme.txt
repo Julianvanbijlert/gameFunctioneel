@@ -35,3 +35,4 @@
   this may be needed to easily check out all the enemies since the tougher enemies appear later in the game
 - You have three hearts and a shield, shown topleft of the screen
 - If you touch the sides of the border or the screen its game over
+- We have refrained for commenting too much in the View.hs since all methods are selfexplaining and show the object on the screen
