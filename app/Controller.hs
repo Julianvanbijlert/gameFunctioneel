@@ -1,5 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE InstanceSigs #-}
+
 module Controller where
   -- | This module defines how the state changes
   --   in response to time and user input
@@ -31,9 +31,9 @@ import Data.Maybe (catMaybes)
 
 -- | Handle one iteration of the game
 step :: Float -> GameState -> IO GameState
-step secs gstate@(GameState {rndGen = sg})
+step secs gstate@(GameState { rndGen = sg})
     | elapsedTime gstate + secs > numberOfSecsBetweenActions = --nog random toevoegen
-      readWriteScores . spawnEnemyOrPowerUp (fst j) .  shootBulletEs . checkState $ gstate{rndGen = snd j}{ elapsedTime = 0}
+      readWriteScores . spawnEnemyOrPowerUp (fst j) .  shootBulletEs . checkState $ gstate{rndGen = snd j} { elapsedTime = 0}
     | otherwise = -- Just update the elapsed time
       readWriteScores . checkState $ gstate{ elapsedTime = elapsedTime gstate + secs }
   where
@@ -192,8 +192,8 @@ removeBullets = filter (not.f)
 
 -- | Spawns only enemies
 spawnEnemyOrPowerUp :: Float -> GameState -> GameState
-spawnEnemyOrPowerUp i g@(GameState {infoToShow = InfoToShow b p e h, state= Running, score = m, rndGen = sg}) | let (highestScore, lowerLimit, mediumScore, middleLimit, highestLimit) = (30000, 45, 1000, 50, 55) 
-                                                                                                                 in (m>highestScore && i >lowerLimit) ||(m > mediumScore && i > middleLimit) || i > highestLimit
+spawnEnemyOrPowerUp i g@(GameState {infoToShow = InfoToShow b p e h, state= Running, score = m, rndGen = sg}) | let (highestScore, lowerLimit, mediumScore, middleLimit, highestLimit) = (30000, 45, 1000, 50, 55)
+                                                                                                                 in (m>highestScore && i >lowerLimit) ||(m > mediumScore && i > middleLimit) || i > highestLimit || null e
                                                                                                                   = g{infoToShow = InfoToShow b p (fst (randomEnemy g) : e) h, rndGen = snd (randomEnemy g)}
                                                                                                               | otherwise = g--nog powerup toevoegen                                        
 spawnEnemyOrPowerUp _ g = g
@@ -224,7 +224,9 @@ randomEnemy g@(GameState {infoToShow = InfoToShow (Border m n) (Player(Point(x,y
 
 
 shootBulletEs :: GameState -> GameState
-shootBulletEs g@(GameState {infoToShow = InfoToShow b p e bul, state = Running}) = g{infoToShow = InfoToShow b p e (catMaybes (concatMap (shootBulletE p) e)++bul)}
+
+shootBulletEs g@(GameState {infoToShow = InfoToShow b p e bul, state = Running}) = g{infoToShow = InfoToShow b p e (catMaybes (concatMap (shootBulletE p) e) ++ bul)}
+shootBulletEs g = g
 
 shootBulletE :: Player -> Enemy -> [Maybe Bullet]
 shootBulletE _ (Rock {})  =
@@ -239,7 +241,7 @@ shootBulletE _ (SpaceShip {enemyPos = (Point(xt, yt))}) = let spawnDistance = 20
       [Just (EnemyBullet (Point (xt - spawnDistance, yt) ) (Vector (-1, 0)))]
 shootBulletE (Player {pos = (Point(x,y))}) (Jet {enemyPos = (Point(xt, yt))}) = let spawnDistance = 30 in
       [Just (EnemyBullet (Point (xt-spawnDistance, yt)) (normalize (Vector (x-(xt-spawnDistance), y-yt))))]
-shootBulletE (Player {pos = (Point(x,y))}) (MotherShip {enemyPos = (Point(xt, yt))}) = 
+shootBulletE (Player {pos = (Point(x,y))}) (MotherShip {enemyPos = (Point(xt, yt))}) =
       [Just (EnemyBullet (Point (xt-spawnDistanceX, yt)) (normalize (Vector v)))
             , Just (EnemyBullet (Point (xt-spawnDistanceX, yt)) (normalize (Vector v1)))
             , Just (EnemyBullet (Point (xt-spawnDistanceX, yt)) (normalize (Vector v2)))]
@@ -338,7 +340,9 @@ inBox dx dy (Point(x, y)) = x > dx - bw && x < bw + dx &&
                      y > dy - bh && y < bh + dy
                     where bw = screenw * 0.25
                           bh = screenh * 0.1
+
 {-Dit is een functie die inputs handled-}
+
 handleInput :: Char -> InfoToShow -> InfoToShow
 handleInput 'w' i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y + dy)}}
 handleInput 's' i@(InfoToShow {player = p@(Player{pos = (Point (x,y)), dir = (Vector(dx, dy))})}) = i{player = p{pos = Point (x,y - dy)}}
@@ -365,6 +369,7 @@ readWriteScores gstate@(GameState {hScores = hs})= do
   scores <- readScores
   if scores == hs then return gstate
   else length scores `seq`writeScore gstate
+
 
 
 readScores :: IO [String]

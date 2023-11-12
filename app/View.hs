@@ -114,9 +114,8 @@ shield :: Picture
 shield = color white (Scale 0.2 0.2 (text (show "U")))
 
 pause :: Picture
-pause = Pictures [showContinue, showSave, showExit]
+pause = Pictures [showContinue, showExit]
                 where showContinue = Translate 0 (screenh * 0.5) (textBox "Continue")
-                      showSave     = textBox "Save"
                       showExit     = Translate 0 (-screenh * 0.5) (textBox "Exit")
 
 gameOver :: Picture
